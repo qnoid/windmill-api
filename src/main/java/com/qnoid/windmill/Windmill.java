@@ -20,10 +20,12 @@ package com.qnoid.windmill;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -49,14 +51,12 @@ public class Windmill
   @Path("/windmill")
   @Consumes(MediaType.MULTIPART_FORM_DATA)  
   @Produces(MediaType.APPLICATION_JSON)
-  public Response put(MultipartFormDataInput input)
+  public Response put(@HeaderParam("Windmill-Name") String name, MultipartFormDataInput input)
   {
     Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
     
     try
     {
-      String name = "balance";
-      
       foo(uploadForm.get("ipa").get(0), String.format("%s.ipa", name));
       foo(uploadForm.get("plist").get(0), String.format("%s.plist", name));
       
@@ -66,7 +66,7 @@ public class Windmill
       return Response.status(503).build();
     }
 
-    return Response.status(200).build();
+    return Response.seeOther(URI.create("https://qnoid.s3-eu-west-1.amazonaws.com/index.html")).build();
   }
 
   private void foo(InputPart inputPart, String objectKey)

@@ -78,6 +78,11 @@
         	<artifactId>jersey-multipart</artifactId>
         	<version>1.18.1</version>
         </dependency>
+        <dependency>
+        	<groupId>com.github.spullara.mustache.java</groupId>
+        	<artifactId>compiler</artifactId>
+        	<version>0.8.15</version>
+        </dependency>
     </dependencies>
 
     <build>
