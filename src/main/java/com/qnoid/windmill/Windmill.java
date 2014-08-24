@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.HeaderParam;
@@ -32,10 +33,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.io.IOUtils;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 /**
@@ -45,21 +48,37 @@ import com.amazonaws.services.s3.transfer.Upload;
 @Path("/")
 public class Windmill
 {
-  private static String bucketName = "qnoid"; 
+  private static String bucketName = "qnoid";
+  
+  private static final Function<InputPart, InputStream> FUNCTION_INPUTPART_TO_INPUTSTREAM = (InputPart inputPart) -> {
+      try
+      {
+        return inputPart.getBody(InputStream.class, null);
+      } catch (IOException e)
+      {
+        throw new RuntimeException(e);
+      } 
+  };
 
   @POST
   @Path("/windmill")
   @Consumes(MediaType.MULTIPART_FORM_DATA)  
   @Produces(MediaType.APPLICATION_JSON)
-  public Response put(@HeaderParam("Windmill-Name") String name, MultipartFormDataInput input)
+  public Response put(@HeaderParam("Windmill-Name") String name, @HeaderParam("Windmill-Identifier") String identifier, MultipartFormDataInput input)
   {
     Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
     
     try
     {
-      foo(uploadForm.get("ipa").get(0), String.format("%s.ipa", name));
-      foo(uploadForm.get("plist").get(0), String.format("%s.plist", name));
+      InputStream ipa = FUNCTION_INPUTPART_TO_INPUTSTREAM.apply(uploadForm.get("ipa").get(0));
+      InputStream plist = FUNCTION_INPUTPART_TO_INPUTSTREAM.apply(uploadForm.get("plist").get(0));
+
+      String string = IOUtils.toString(plist, "UTF-8");
+      System.out.println(string);
       
+      foo(ipa, String.format("%s/%s.ipa", identifier, name));
+      foo(plist, String.format("%s/%s.plist", identifier, name));
+
     } catch (Exception e)
     {
       e.printStackTrace();
@@ -69,31 +88,22 @@ public class Windmill
     return Response.seeOther(URI.create("https://qnoid.s3-eu-west-1.amazonaws.com/index.html")).build();
   }
 
-  private void foo(InputPart inputPart, String objectKey)
-  {
-     try {
- 
-      InputStream inputStream = inputPart.getBody(InputStream.class,null);
-      
-      foo(inputStream, objectKey);
-     } catch (IOException e) {
-     e.printStackTrace();
-     }
-  }
-
   /**
    * @param inputStream
    * @param objectKey TODO
+   * @throws IOException 
    */
-  private void foo(InputStream inputStream, String objectKey)
+  private void foo(InputStream inputStream, String objectKey) throws IOException
   {
     try {
       
       TransferManager tm = new TransferManager();
-      
+            
+      ObjectMetadata metadata = new ObjectMetadata();
+
       // TransferManager processes all transfers asynchronously, 
       // so this call will return immediately.
-      Upload upload = tm.upload(bucketName, objectKey, inputStream, null);
+      Upload upload = tm.upload(bucketName, objectKey, inputStream, metadata);
       
       // Or you can block and wait for the upload to finish
       upload.waitForCompletion();
