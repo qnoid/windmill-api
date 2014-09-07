@@ -18,9 +18,15 @@
  */
 package com.qnoid.windmill;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringReader;
+import java.io.Writer;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -29,6 +35,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -37,10 +44,9 @@ import org.apache.commons.io.IOUtils;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.Upload;
+import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.Mustache;
+import com.github.mustachejava.MustacheFactory;
 /**
  * @author qnoid
  *
@@ -48,8 +54,8 @@ import com.amazonaws.services.s3.transfer.Upload;
 @Path("/")
 public class Windmill
 {
-  private static String bucketName = "qnoid";
-  
+  private static final String BUCKET_CANONICAL_NAME = "qnoid.s3-eu-west-1.amazonaws.com";
+
   private static final Function<InputPart, InputStream> FUNCTION_INPUTPART_TO_INPUTSTREAM = (InputPart inputPart) -> {
       try
       {
@@ -59,25 +65,43 @@ public class Windmill
         throw new RuntimeException(e);
       } 
   };
+  
+  private static final StringMustache PLIST_MUSTACHE = (String string, Map<String, Object> scopes) -> {
+    
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    Writer writer = new OutputStreamWriter(out);
+    MustacheFactory mf = new DefaultMustacheFactory();
+    Mustache mustache = mf.compile(new StringReader(string), "plist");
+    mustache.execute(writer, scopes);
+    writer.flush();
+    
+  return out;
+  };
 
   @POST
-  @Path("/windmill")
+  @Path("/windmill/{user}")
   @Consumes(MediaType.MULTIPART_FORM_DATA)  
   @Produces(MediaType.APPLICATION_JSON)
-  public Response put(@HeaderParam("Windmill-Name") String name, @HeaderParam("Windmill-Identifier") String identifier, MultipartFormDataInput input)
+  public Response put(@PathParam("user") String user, @HeaderParam("Windmill-Name") String name, @HeaderParam("Windmill-Identifier") String identifier, MultipartFormDataInput input)
   {
     Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
     
     try
     {
-      InputStream ipa = FUNCTION_INPUTPART_TO_INPUTSTREAM.apply(uploadForm.get("ipa").get(0));
-      InputStream plist = FUNCTION_INPUTPART_TO_INPUTSTREAM.apply(uploadForm.get("plist").get(0));
+      InputStream ipaStream = FUNCTION_INPUTPART_TO_INPUTSTREAM.apply(uploadForm.get("ipa").get(0));
+      InputStream plistSteam = FUNCTION_INPUTPART_TO_INPUTSTREAM.apply(uploadForm.get("plist").get(0));
 
-      String string = IOUtils.toString(plist, "UTF-8");
-      System.out.println(string);
+      String plist = IOUtils.toString(plistSteam, "UTF-8");
+      System.out.println(plist);
       
-      foo(ipa, String.format("%s/%s.ipa", identifier, name));
-      foo(plist, String.format("%s/%s.plist", identifier, name));
+      HashMap<String, Object> substitutions = new HashMap<String, Object>();
+      substitutions.put("URL", String.format("https://%s/%s/%s/%s.ipa", BUCKET_CANONICAL_NAME, user, identifier, name));
+      
+      ByteArrayOutputStream out = PLIST_MUSTACHE.parse(plist, substitutions);
+
+      Bucket bucket = new Bucket();
+      bucket.upload(ipaStream, String.format("%s/%s/%s.ipa", user, identifier, name));
+      bucket.upload(new ByteArrayInputStream(out.toByteArray()), String.format("%s/%s/%s.plist", user, identifier, name));
 
     } catch (Exception e)
     {
@@ -85,32 +109,8 @@ public class Windmill
       return Response.status(503).build();
     }
 
-    return Response.seeOther(URI.create("https://qnoid.s3-eu-west-1.amazonaws.com/index.html")).build();
-  }
-
-  /**
-   * @param inputStream
-   * @param objectKey TODO
-   * @throws IOException 
-   */
-  private void foo(InputStream inputStream, String objectKey) throws IOException
-  {
-    try {
-      
-      TransferManager tm = new TransferManager();
-            
-      ObjectMetadata metadata = new ObjectMetadata();
-
-      // TransferManager processes all transfers asynchronously, 
-      // so this call will return immediately.
-      Upload upload = tm.upload(bucketName, objectKey, inputStream, metadata);
-      
-      // Or you can block and wait for the upload to finish
-      upload.waitForCompletion();
-      System.out.println("Upload complete.");
-    } catch (AmazonClientException | InterruptedException amazonClientException) {
-      System.out.println("Unable to upload file, upload was aborted.");
-      amazonClientException.printStackTrace();
-    }
+    String itmsURL = String.format("itms-services://?action=download-manifest&url=https://%s/%s/%s/%s.plist", BUCKET_CANONICAL_NAME, user, identifier, name);
+    
+  return Response.seeOther(URI.create(itmsURL)).build();
   }
 }
