@@ -55,7 +55,8 @@ import com.github.mustachejava.MustacheFactory;
 public class Windmill
 {
   private static final String BUCKET_CANONICAL_NAME = "qnoid.s3-eu-west-1.amazonaws.com";
-
+  private static final String RELATIVE_PATH_TO_RESOURCE = "%s/%s/%s";
+  
   private static final Function<InputPart, InputStream> FUNCTION_INPUTPART_TO_INPUTSTREAM = (InputPart inputPart) -> {
       try
       {
@@ -84,8 +85,11 @@ public class Windmill
   @Produces(MediaType.APPLICATION_JSON)
   public Response put(@PathParam("user") String user, @HeaderParam("Windmill-Name") String name, @HeaderParam("Windmill-Identifier") String identifier, MultipartFormDataInput input)
   {
+    String relativePathToResource = String.format(RELATIVE_PATH_TO_RESOURCE, user, identifier, name);
+    String itmsURL = String.format("itms-services://?action=download-manifest&url=https://%s/%s.plist", BUCKET_CANONICAL_NAME, relativePathToResource);
+
     Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
-    
+
     try
     {
       InputStream ipaStream = FUNCTION_INPUTPART_TO_INPUTSTREAM.apply(uploadForm.get("ipa").get(0));
@@ -95,21 +99,19 @@ public class Windmill
       System.out.println(plist);
       
       HashMap<String, Object> substitutions = new HashMap<String, Object>();
-      substitutions.put("URL", String.format("https://%s/%s/%s/%s.ipa", BUCKET_CANONICAL_NAME, user, identifier, name));
+      substitutions.put("URL", String.format("https://%s/%s.ipa", BUCKET_CANONICAL_NAME, relativePathToResource));
       
       ByteArrayOutputStream out = PLIST_MUSTACHE.parse(plist, substitutions);
 
       Bucket bucket = new Bucket();
-      bucket.upload(ipaStream, String.format("%s/%s/%s.ipa", user, identifier, name));
-      bucket.upload(new ByteArrayInputStream(out.toByteArray()), String.format("%s/%s/%s.plist", user, identifier, name));
-
+      bucket.upload(ipaStream, String.format("%s.ipa", relativePathToResource));
+      bucket.upload(new ByteArrayInputStream(out.toByteArray()), String.format("%s.plist", relativePathToResource));
     } catch (Exception e)
     {
       e.printStackTrace();
       return Response.status(503).build();
     }
 
-    String itmsURL = String.format("itms-services://?action=download-manifest&url=https://%s/%s/%s/%s.plist", BUCKET_CANONICAL_NAME, user, identifier, name);
     
   return Response.seeOther(URI.create(itmsURL)).build();
   }

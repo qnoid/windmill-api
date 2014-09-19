@@ -41,12 +41,15 @@ public class Bucket
    */
   public void upload(InputStream inputStream, String objectKey)
   {
+    upload(inputStream, objectKey, new ObjectMetadata());
+  }
+
+  public void upload(InputStream inputStream, String objectKey, ObjectMetadata objectMetadata)
+  {
     try {
       
       TransferManager tm = new TransferManager();            
-      ObjectMetadata metadata = new ObjectMetadata();
-    
-      Upload upload = tm.upload(this.bucketName, objectKey, inputStream, metadata);
+      Upload upload = tm.upload(this.bucketName, objectKey, inputStream, objectMetadata);
       upload.waitForCompletion();
       System.out.println("Upload complete.");
     } 
