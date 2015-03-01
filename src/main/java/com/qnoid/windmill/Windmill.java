@@ -1,21 +1,10 @@
-/* 
- * This file is part of wildfly-helloworld-rs.
- *
- *  wildfly-helloworld-rs is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *  
- *  wildfly-helloworld-rs is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
- *  
- *  You should have received a copy of the GNU Lesser General Public License
- *  along with wildfly-helloworld-rs.  If not, see <http://www.gnu.org/licenses/>.
- *  
- * (c) Keith Webster Johnston & Markos Charatzas 
- */
+// 
+// Windmill.java
+// windmill
+//  
+// Created by Markos Charatzas on ${date}.
+// Copyright (c) 2014 qnoid.com. All rights reserved.
+//
 package com.qnoid.windmill;
 
 import java.io.ByteArrayInputStream;
@@ -31,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -48,13 +38,16 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 /**
+ * While developing, looks up ~/.aws/config for the AWS_ACCESS_KEY_ID and AWS_SECRET_KEY to access the S3 bucket
+ * While deployed on EC2, uses the "i-b28874f2" IAM role to access the S3 bucket (https://console.aws.amazon.com/iam/home?#roles/i-b28874f2)
+ *  
  * @author qnoid
  *
  */
 @Path("/")
 public class Windmill
 {
-  private static final String BUCKET_CANONICAL_NAME = "qnoid.s3-eu-west-1.amazonaws.com";
+  static final String BUCKET_CANONICAL_NAME = "windmillio.s3-eu-west-1.amazonaws.com";
   private static final String RELATIVE_PATH_TO_RESOURCE = "%s/%s/%s";
   
   private static final Function<InputPart, InputStream> FUNCTION_INPUTPART_TO_INPUTSTREAM = (InputPart inputPart) -> {
@@ -78,9 +71,12 @@ public class Windmill
     
   return out;
   };
-
+  
+  @Inject
+  private Bucket bucket;
+  
   @POST
-  @Path("/windmill/{user}")
+  @Path("/{user}")
   @Consumes(MediaType.MULTIPART_FORM_DATA)  
   @Produces(MediaType.APPLICATION_JSON)
   public Response put(@PathParam("user") String user, @HeaderParam("Windmill-Name") String name, @HeaderParam("Windmill-Identifier") String identifier, MultipartFormDataInput input)
@@ -102,8 +98,7 @@ public class Windmill
       substitutions.put("URL", String.format("https://%s/%s.ipa", BUCKET_CANONICAL_NAME, relativePathToResource));
       
       ByteArrayOutputStream out = PLIST_MUSTACHE.parse(plist, substitutions);
-
-      Bucket bucket = new Bucket();
+      
       bucket.upload(ipaStream, String.format("%s.ipa", relativePathToResource));
       bucket.upload(new ByteArrayInputStream(out.toByteArray()), String.format("%s.plist", relativePathToResource));
     } catch (Exception e)
