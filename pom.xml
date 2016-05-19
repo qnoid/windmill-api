@@ -18,112 +18,273 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.qnoid.windmill</groupId>
+    <groupId>io.windmill.windmill</groupId>
     <version>1.0.0-SNAPSHOT</version>
     <artifactId>windmill</artifactId>
     <packaging>war</packaging>
 
-   <properties>
-      <!-- Explicitly declaring the source encoding eliminates the following
-         message: -->
-      <!-- [WARNING] Using platform encoding (UTF-8 actually) to copy filtered
-         resources, i.e. build is platform dependent! -->
-      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- *************************** PROPERTIES  **************************************************** -->
 
-       <!-- JBoss dependency versions -->
+    <properties>
+        <!-- generic props -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jdk.version>1.8</jdk.version>
 
-       <version.wildfly.maven.plugin>1.0.2.Final</version.wildfly.maven.plugin>
+        <!-- libs version -->
+        <version.wildfly>10.0.0.Final</version.wildfly>
+        <lib.version.inject>1.0</lib.version.inject>
+        <javaee.api.version>7.0</javaee.api.version>
+        <aws.java.sdk.version>1.9.6</aws.java.sdk.version>
+        <apache.commons.io.version>2.4</apache.commons.io.version>
+        <apache.commons.configuration.version>2.0</apache.commons.configuration.version>
+        <jersey.multipart.version>1.18.1</jersey.multipart.version>
+        <mustache.compiler.version>0.8.15</mustache.compiler.version>
+        <postgres.driver.version>9.4-1206-jdbc4</postgres.driver.version>
 
-       <version.wildfly>8.1.0.Final</version.wildfly>
-       <lib.version.inject>1.0</lib.version.inject>
-       <version.jboss.spec.javaee.7.0>1.0.0.Final</version.jboss.spec.javaee.7.0>
+        <!-- other plugin versions -->
+        <version.maven.wildfly.plugin>1.0.2.Final</version.maven.wildfly.plugin>
+        <version.maven.compiler.plugin>3.5</version.maven.compiler.plugin>
+        <version.maven.war.plugin>2.6</version.maven.war.plugin>
 
-       <!-- other plugin versions -->
-       <version.compiler.plugin>3.1</version.compiler.plugin>
-       <version.exec.plugin>1.2.1</version.exec.plugin>
-       <version.war.plugin>2.1.1</version.war.plugin>
+        <!-- wildfly props -->
+        <wildfly.home>${basedir}/server/wildfly-10.0.0.Final</wildfly.home>
+        <wildfly.ds.name>java:jboss/datasources/windmillDS</wildfly.ds.name>
 
-       <!-- maven-compiler-plugin -->
-       <maven.compiler.target>1.8</maven.compiler.target>
-       <maven.compiler.source>1.8</maven.compiler.source>
-   </properties>
-   
-      <dependencyManagement>
-         <dependencies>
-   
-        <dependency>
-           <groupId>org.jboss.spec</groupId>
-           <artifactId>jboss-javaee-7.0</artifactId>
-           <version>${version.jboss.spec.javaee.7.0}</version>
-           <type>pom</type>
-           <scope>import</scope>
-        </dependency>
-</dependencies>
-</dependencyManagement>
+        <!-- Postgres props -->
+        <postgres.username>windmill</postgres.username>
+        <postgres.pwd>windmill</postgres.pwd>
+        <postgres.server.ip>localhost</postgres.server.ip>
+        <postgres.server.port>5432</postgres.server.port>
+        <postgres.databaseName>windmill</postgres.databaseName>
 
-    <dependencies>
-        <dependency>
-        	<groupId>org.apache.geronimo.specs</groupId>
-        	<artifactId>geronimo-atinject_1.0_spec</artifactId>
-        	<version>${lib.version.inject}</version>
-        </dependency>
-        <dependency>
-        	<groupId>com.amazonaws</groupId>
-        	<artifactId>aws-java-sdk</artifactId>
-        	<version>1.7.8.1</version>
-        </dependency>
-        <dependency>
-        	<groupId>commons-io</groupId>
-        	<artifactId>commons-io</artifactId>
-        	<version>2.4</version>
-        </dependency>
-
-        <dependency>
-        	<groupId>com.sun.jersey.contribs</groupId>
-        	<artifactId>jersey-multipart</artifactId>
-        	<version>1.18.1</version>
-        </dependency>
-        <dependency>
-        	<groupId>com.github.spullara.mustache.java</groupId>
-        	<artifactId>compiler</artifactId>
-        	<version>0.8.15</version>
-        </dependency>
-        <dependency>
-        	<groupId>org.jboss.resteasy</groupId>
-        	<artifactId>resteasy-multipart-provider</artifactId>
-        	<version>3.0.8.Final</version>
-        	<scope>provided</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <!-- Set the name of the war, used as the context root when the app 
-            is deployed -->
-        <finalName>${project.artifactId}</finalName>
-    </build>
+    </properties>
 
     <profiles>
+
+        <!-- *************************** POSTGRES DB **************************************************** -->
         <profile>
-            <!-- When built in OpenShift the 'openshift' profile will be used when invoking mvn. -->
-            <!-- Use this profile for any OpenShift specific customization your app will need. -->
-            <!-- By default that is to put the resulting archive into the 'deployments' folder. -->
-            <!-- http://maven.apache.org/guides/mini/guide-building-for-different-environments.html -->
-            <id>openshift</id>
+            <!-- profile for using postgres db-->
+            <id>postgres</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources/postgres</directory>
+                        <filtering>true</filtering>
+                        <includes>
+                            <include>**/*.xml</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <!-- *************************** H2 DB for Paris  **************************************************** -->
+
+        <profile>
+            <!-- profile for using h2 persistence xml on local wildfly -->
+            <id>h2</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources/h2</directory>
+                        <filtering>true</filtering>
+                        <includes>
+                            <include>**/*.xml</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <!-- *************************** Wildfly Setup  **************************************************** -->
+        <profile>
+        <id>setup-datasource</id>
+        <activation>
+            <activeByDefault>false</activeByDefault>
+        </activation>
             <build>
                 <plugins>
                     <plugin>
-                        <artifactId>maven-war-plugin</artifactId>
-                        <version>${version.war.plugin}</version>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <!--2. Copy driver jars -->
+                            <execution>
+                                <id>unpack-drivers</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+
+                                        <artifactItem>
+                                            <groupId>org.postgresql</groupId>
+                                            <artifactId>postgresql</artifactId>
+                                            <type>jar</type>
+                                            <overWrite>true</overWrite>
+                                            <outputDirectory>${wildfly.home}/standalone/deployments/</outputDirectory>
+                                            <destFileName>postgresql-${postgres.driver.version}.jar</destFileName>
+                                            <version>${postgres.driver.version}</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.wildfly.plugins</groupId>
+                        <artifactId>wildfly-maven-plugin</artifactId>
+                        <version>${version.maven.wildfly.plugin}</version>
                         <configuration>
-                            <outputDirectory>deployments</outputDirectory>
-                            <warName>ROOT</warName>
-                            <!-- Java EE 7 doesn't require web.xml, Maven needs to catch up! -->
-                            <failOnMissingWebXml>false</failOnMissingWebXml>
+                            <jboss-home>${wildfly.home}</jboss-home>
+                            <server-config>standalone.xml</server-config>
                         </configuration>
+                        <executions>
+
+                            <execution>
+                                <id>ADD_POSTGRES_DATASOURCE</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>add-resource</goal>
+                                </goals>
+                                <configuration>
+                                    <address>subsystem=datasources,data-source=omniads-postgresql</address>
+                                    <resources>
+                                        <resource>
+                                            <properties>
+                                                <connection-url>jdbc:postgresql://${postgres.server.ip}:${postgres.server.port}/${postgres.databaseName}</connection-url>
+                                                <jndi-name>${wildfly.ds.name}</jndi-name>
+                                                <driver-name>postgresql-${postgres.driver.version}.jar</driver-name>
+                                                <driver-class>org.postgresql.Driver</driver-class>
+                                                <enabled>true</enabled>
+                                                <use-java-context>true</use-java-context>
+                                                <pool-prefill>true</pool-prefill>
+                                                <user-name>${postgres.username}</user-name>
+                                                <password>${postgres.pwd}</password>
+                                                <use-ccm>true</use-ccm>
+                                                <background-validation>false</background-validation>
+                                            </properties>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
+
         </profile>
     </profiles>
-</project>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.wildfly.bom</groupId>
+                <artifactId>wildfly-javaee7</artifactId>
+                <scope>import</scope>
+                <type>pom</type>
+                <version>${version.wildfly}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>javax</groupId>
+            <artifactId>javaee-api</artifactId>
+            <version>${javaee.api.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-multipart-provider</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>${aws.java.sdk.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${apache.commons.io.version}</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.github.spullara.mustache.java</groupId>
+            <artifactId>compiler</artifactId>
+            <version>${mustache.compiler.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <version>${apache.commons.configuration.version}</version>
+        </dependency>
+
+    </dependencies>
+
+    <!-- *************************** BUILD **************************************************** -->
+
+    <build>
+        <!--<finalName>${project.artifactId}</finalName>-->
+        <finalName>ROOT</finalName>
+        <resources>
+            <resource>
+                <directory>src/main/resources/</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.xml</include>
+                </includes>
+            </resource>
+        </resources>
+
+        <!-- *************************** PLUGINS ************************************* -->
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${version.maven.compiler.plugin}</version>
+                <configuration>
+                    <source>${jdk.version}</source>
+                    <target>${jdk.version}</target>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>${version.maven.war.plugin}</version>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>${version.maven.wildfly.plugin}</version>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
