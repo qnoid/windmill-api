@@ -8,5 +8,5 @@ import javax.ws.rs.core.Application;
  * @author javapapo on 19/05/2016.
  */
 @ApplicationPath("/")
-public class JaxRsActivator extends Application {
+public class WindmillApplication extends Application {
 }

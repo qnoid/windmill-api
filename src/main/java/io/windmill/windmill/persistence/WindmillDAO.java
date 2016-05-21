@@ -1,15 +1,20 @@
+// 
+// WindmillDAO.java
+// windmill
+//  
+// Created by Markos Charatzas on 21 May 2016.
+// Copyright (c) 2016 qnoid.com. All rights reserved.
+//
 package io.windmill.windmill.persistence;
+
+import java.util.List;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.util.List;
 
-/**
- * @author javapapo on 19/05/2016.
- */
 @Stateless
-public class UserDAO {
+public class WindmillDAO {
 
     @PersistenceContext(name = "windmill-pu")
     private EntityManager em;
@@ -18,16 +23,8 @@ public class UserDAO {
      * TODO
      * @return
      */
-    public List<User> users() {
-        return em.createNamedQuery("user.list").getResultList();
-    }
-
-    /**
-     * TODO
-     * @return
-     */
-    public List<User> windmills(String userIdentifier) {
+    public List<Windmill> windmills(String userIdentifier) {
         return em.createNamedQuery("windmill.with_user_identifier")
                 .setParameter("user_identifier", userIdentifier).getResultList();
-    }    
+    }
 }

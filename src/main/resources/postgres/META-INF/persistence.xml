@@ -14,6 +14,7 @@
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect" />
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="true"/>
+            <property name="hibernate.default_schema" value="${postgres.schema}"/>            
         </properties>
     </persistence-unit>
 </persistence>

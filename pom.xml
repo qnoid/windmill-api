@@ -56,6 +56,7 @@
         <postgres.server.ip>localhost</postgres.server.ip>
         <postgres.server.port>5432</postgres.server.port>
         <postgres.databaseName>windmill</postgres.databaseName>
+        <postgres.schema>public</postgres.schema>
 
     </properties>
 

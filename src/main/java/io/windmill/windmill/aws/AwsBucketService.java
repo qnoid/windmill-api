@@ -38,15 +38,9 @@ public class AwsBucketService {
         transferManager = new TransferManager();
         LOGGER.info("AWS TransferManager initialized");
     }
-
-    @PreDestroy
-    private void tearDown(){
-        if(transferManager!=null){
-            transferManager.shutdownNow(true);
-            LOGGER.info("AWS TransferManager destroyed");
-
-        }
-
+    
+    public void upload(InputStream inputStream, String objectKey){
+      this.upload(inputStream, objectKey, new ObjectMetadata());
     }
 
     public void upload(InputStream inputStream, String objectKey, ObjectMetadata objectMetadata) {
