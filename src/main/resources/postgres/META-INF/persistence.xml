@@ -7,7 +7,7 @@
     <persistence-unit name="windmill-pu">
         <jta-data-source>${wildfly.ds.name}</jta-data-source>
         <properties>
-            <property name="hibernate.connection.url" value="jdbc:postgresql://${postgres.host}:${postgres.port}/${postgres.databaseName}"/>
+            <property name="hibernate.connection.url" value="jdbc:postgresql://${postgres.url}/${postgres.databaseName}"/>
             <property name="hibernate.connection.driver_class" value="org.postgresql.Driver" />
             <property name="hibernate.connection.username" value="${postgres.username}"/>
             <property name="hibernate.connection.password" value="${postgres.password}"/>

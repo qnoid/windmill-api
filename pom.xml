@@ -52,9 +52,8 @@
 
         <!-- Postgres props -->
         <postgres.username>windmill</postgres.username>
-        <postgres.pwd>windmill</postgres.pwd>
-        <postgres.server.ip>localhost</postgres.server.ip>
-        <postgres.server.port>5432</postgres.server.port>
+        <postgres.password>windmill</postgres.password>
+        <postgres.url>localhost:5432</postgres.url>
         <postgres.databaseName>windmill</postgres.databaseName>
         <postgres.schema>public</postgres.schema>
 
@@ -159,7 +158,7 @@
                                     <resources>
                                         <resource>
                                             <properties>
-                                                <connection-url>jdbc:postgresql://${postgres.server.ip}:${postgres.server.port}/${postgres.databaseName}</connection-url>
+                                                <connection-url>jdbc:postgresql://${postgres.url}/${postgres.databaseName}</connection-url>
                                                 <jndi-name>${wildfly.ds.name}</jndi-name>
                                                 <driver-name>postgresql-${postgres.driver.version}.jar</driver-name>
                                                 <driver-class>org.postgresql.Driver</driver-class>
@@ -167,7 +166,7 @@
                                                 <use-java-context>true</use-java-context>
                                                 <pool-prefill>true</pool-prefill>
                                                 <user-name>${postgres.username}</user-name>
-                                                <password>${postgres.pwd}</password>
+                                                <password>${postgres.password}</password>
                                                 <use-ccm>true</use-ccm>
                                                 <background-validation>false</background-validation>
                                             </properties>
