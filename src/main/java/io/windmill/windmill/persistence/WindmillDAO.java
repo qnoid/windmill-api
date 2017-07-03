@@ -11,6 +11,7 @@ import java.util.List;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 
 @Stateless
@@ -18,13 +19,34 @@ public class WindmillDAO {
 
     @PersistenceContext(name = "windmill-pu")
     private EntityManager em;
+    
+    public WindmillDAO() {
+		super();
+	}
 
-    /**
-     * TODO
-     * @return
-     */
-    public List<Windmill> windmills(String userIdentifier) {
-        return em.createNamedQuery("windmill.with_user_identifier")
-                .setParameter("user_identifier", userIdentifier).getResultList();
+	public WindmillDAO(EntityManager em) {
+		this.em = em;
+	}
+
+    public Windmill findByIdentifier(String identifier) throws NoResultException {
+        return (Windmill) em.createNamedQuery("windmill.find_by_identifier")
+                .setParameter("identifier", identifier).getSingleResult();
     }
+    
+    @SuppressWarnings("unchecked")
+	public List<Windmill> windmills(String accountIdentifier) {
+        return em.createNamedQuery("windmill.with_account_identifier")
+                .setParameter("account_identifier", accountIdentifier).getResultList();
+    }
+
+	public Windmill findOrCreate(String identifier, Action<Windmill> onCreate) {
+
+    	try {
+    		return this.findByIdentifier(identifier);
+    	}
+    	catch (NoResultException e) {
+    		return onCreate.create(identifier);
+    	}
+		
+	}
 }

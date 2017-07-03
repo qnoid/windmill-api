@@ -55,10 +55,10 @@ Navigate to the root (`/windmill`) of the project and execute.
 
 ```
 mvn clean install -Dpostgres.username=<SOMETHING>
-                  -Dpostgres.pwd=<SOMETHING> 
-                  -Dpostgres.server.ip=<SOMETHING> 
-                  -Dpostgres.server.port=<SOMETHING> 
-                  -Dpostgres.server.databaseName=<SOMETHING>
+                  -Dpostgres.password=<SOMETHING> 
+                  -Dpostgres.url=<SOMETHING> 
+                  -Dpostgres.databaseName=<SOMETHING>
+                  -Dpostgres.schema=<SOMETHING>                  
 ```
 
 The above properties, should point to the 'AWS' specific postgres.
