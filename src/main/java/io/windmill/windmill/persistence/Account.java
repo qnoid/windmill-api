@@ -15,16 +15,12 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 
-import org.jboss.logging.Logger;
-
 @Entity
 @NamedQueries({
     @NamedQuery(name = "account.list", query = "SELECT a FROM Account a"),
     @NamedQuery(name = "account.find_by_identifier", query = "SELECT a FROM Account a WHERE a.identifier = :identifier")})
 public class Account {
 	
-    private static final Logger LOGGER = Logger.getLogger(Account.class.getName());
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -60,7 +56,5 @@ public class Account {
 	public void add(Windmill windmill) {
 		windmill.account = this;		
 		this.windmills.add(windmill);
-		
-        LOGGER.info(String.format("windmills: %s", windmills));
 	}    
 }

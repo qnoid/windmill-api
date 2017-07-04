@@ -1,5 +1,7 @@
 package io.windmill.windmill.services;
 
+import org.jboss.logging.Logger;
+
 import javax.enterprise.context.ApplicationScoped;
 
 import com.amazonaws.services.sns.AmazonSNS;
@@ -12,6 +14,8 @@ import com.amazonaws.services.sns.model.PublishResult;
 @ApplicationScoped
 public class NotificationService {
 
+    private static final Logger LOGGER = Logger.getLogger(NotificationService.class.getName());
+
 	public static CreatePlatformEndpointRequest createPlatformEndpoint(
 			String customData, String token, String applicationArn) {
 		
@@ -23,15 +27,13 @@ public class NotificationService {
 		return platformEndpointRequest; 
 	}
 	
-	public static PublishRequest publish(String endpointArn, String message) {
+	public static PublishRequest request(String endpointArn, String message) {
 		
 		PublishRequest publishRequest = new PublishRequest();
 		publishRequest.setMessageStructure("json");
 		publishRequest.setTargetArn(endpointArn);
-
-		System.out.println(String.format("{Message Body: %s}", message));
-		
 		publishRequest.setMessage(message);
+		
 		return publishRequest;
 	}
 	
@@ -41,14 +43,21 @@ public class NotificationService {
 		this.sns = AmazonSNSClientBuilder.defaultClient();
 	}
 
-	public void notify(String message, CreatePlatformEndpointResult platformEndpointResult) {
+	public boolean notify(String message, CreatePlatformEndpointResult platformEndpointResult) {
 		
-		PublishRequest publishRequest = publish(
+		PublishRequest publishRequest = request(
 				platformEndpointResult.getEndpointArn(), Notification.Messages.on(Notification.Platform.APNS_SANDBOX, message));
 		
-		PublishResult publishResult = sns.publish(publishRequest);
+		try {
+			PublishResult publishResult = sns.publish(publishRequest);
+			
+			return publishResult.getMessageId() != null;
+		}
+		catch (RuntimeException e) {
+			LOGGER.error(e.getMessage(), e.getCause());
+		}
 		
-		System.out.println(String.format("Published! \n{MessageId=%s}", publishResult.getMessageId()));
+		return false;
 	}
 
 	public CreatePlatformEndpointResult createPlatform(String token) {
@@ -61,11 +70,12 @@ public class NotificationService {
 				userData,
 				token,
 				applicationArn);
-		
-		CreatePlatformEndpointResult platformEndpointResult = sns.createPlatformEndpoint(platformEndpointRequest);
-		
-		System.out.println(platformEndpointResult);
-		
-		return platformEndpointResult;
+
+		try {
+			return sns.createPlatformEndpoint(platformEndpointRequest);
+		} catch (RuntimeException e) {
+			LOGGER.error(e.getMessage(), e.getCause());
+			throw e;
+		}		
 	}
 }
