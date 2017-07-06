@@ -1,8 +1,6 @@
 package io.windmill.windmill.services;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
@@ -19,15 +17,8 @@ public final class MustacheWriter {
 	
     private final MustacheFactory mf = new DefaultMustacheFactory();
 
-	private ByteArrayOutputStream parse(String value, Map<String, Object> scopes) throws IOException {
-		
-	    final ByteArrayOutputStream out = new ByteArrayOutputStream();
-	    final Writer writer = new OutputStreamWriter(out);
-	    final Mustache mustache = this.mf.compile(new StringReader(value), "plist");
-	    mustache.execute(writer, scopes);
-	    writer.flush();
-	
-	    return out;
+	private ByteArrayOutputStream parse(String value, Map<String, Object> scopes) throws IOException {		
+	    return parse(new StringReader(value), scopes);
 	}
 	
 	private ByteArrayOutputStream parse(Reader reader, Map<String, Object> scopes) throws IOException {		

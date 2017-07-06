@@ -1,6 +1,8 @@
 
 package io.windmill.windmill.persistence;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 
 import javax.persistence.Column;
@@ -12,10 +14,13 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriBuilderException;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.windmill.windmill.web.CustomJsonInstantSerializer;
+import io.windmill.windmill.web.common.UriBuilders;
 
 @Entity
 @NamedQueries({
@@ -118,14 +123,17 @@ public class Windmill {
 	}
 
 	public String getURL() {
-		//"itms-services://?action=download-manifest&url=https://ota.windmill.io/{user_identifier}/{windmill_identifier}/{windmill_version}/{windmill_title}.plist"
-		final String ITMS_SERVICES_URL_STRING = "itms-services://?action=download-manifest&url=https://ota.windmill.io/%s/%s/%s/%s.plist";
-		
-		return String.format(ITMS_SERVICES_URL_STRING, 
-				this.account.getIdentifier(),
-				this.identifier,
-				this.version,
-				this.title);
+		URI path = UriBuilder.fromPath(this.account.getIdentifier())
+				.path(this.identifier)
+				.path(String.valueOf(this.version))
+				.path(this.title)
+				.build();
+				
+		try {
+			return UriBuilders.createITMS(String.format("%s.plist", path));
+		} catch (IllegalArgumentException | UriBuilderException | URISyntaxException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override

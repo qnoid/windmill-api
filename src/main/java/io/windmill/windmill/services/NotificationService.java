@@ -14,7 +14,7 @@ import com.amazonaws.services.sns.model.PublishResult;
 @ApplicationScoped
 public class NotificationService {
 
-    private static final Logger LOGGER = Logger.getLogger(NotificationService.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(NotificationService.class);
 
 	public static CreatePlatformEndpointRequest createPlatformEndpoint(
 			String customData, String token, String applicationArn) {

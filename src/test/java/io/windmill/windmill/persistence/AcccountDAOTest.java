@@ -49,7 +49,7 @@ public class AcccountDAOTest {
 	}
 
 	@Test
-	public void testGivenExistingnIdentifierAssertAccount() {
+	public void testGivenExistingIdentifierAssertAccount() {
 		
 		//given
 		AccountDAO accountDAO = new AccountDAO(em);

@@ -39,13 +39,13 @@ public class WindmillDAO {
                 .setParameter("account_identifier", accountIdentifier).getResultList();
     }
 
-	public Windmill findOrCreate(String identifier, Action<Windmill> onCreate) {
+	public Windmill findOrCreate(String identifier, Action<Windmill> inCaseOfNoResultException) {
 
     	try {
     		return this.findByIdentifier(identifier);
     	}
     	catch (NoResultException e) {
-    		return onCreate.create(identifier);
+    		return inCaseOfNoResultException.create(identifier);
     	}
 		
 	}

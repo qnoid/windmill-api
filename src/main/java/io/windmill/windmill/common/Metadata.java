@@ -15,9 +15,9 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.plist.XMLPropertyListConfiguration;
 
-public class WindmillMetadata {
+public class Metadata {
 
-	public static WindmillMetadata read(InputStreamReader inputStreamReader) throws ConfigurationException {
+	public static Metadata read(InputStreamReader inputStreamReader) throws ConfigurationException {
 				
 		XMLPropertyListConfiguration xmlPropertyListConfiguration = new XMLPropertyListConfiguration();			
 		xmlPropertyListConfiguration.read(new BufferedReader(inputStreamReader));
@@ -26,7 +26,7 @@ public class WindmillMetadata {
         Double windmill_version = items.getDouble("metadata.bundle-version");
         String windmill_title = items.getString("metadata.title");
         
-        return new WindmillMetadata(windmill_identifier, windmill_version, windmill_title);
+        return new Metadata(windmill_identifier, windmill_version, windmill_title);
 	}
 	
     @NotNull
@@ -38,7 +38,7 @@ public class WindmillMetadata {
     @NotNull
     private String title;
 
-	public WindmillMetadata(String identifier, Double version, String title) {
+	public Metadata(String identifier, Double version, String title) {
 		this.identifier = identifier;
 		this.version = version;
 		this.title = title;
