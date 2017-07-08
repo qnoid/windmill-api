@@ -7,9 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
@@ -19,6 +17,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -28,11 +27,12 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
-import com.amazonaws.services.sns.model.MessageAttributeValue;
+import com.amazonaws.services.sns.model.InternalErrorException;
 
 import io.windmill.windmill.common.Metadata;
+import io.windmill.windmill.persistence.Device;
 import io.windmill.windmill.persistence.Windmill;
-import io.windmill.windmill.services.Notification.Platform;
+import io.windmill.windmill.services.AccountService;
 import io.windmill.windmill.services.WindmillService;
 import io.windmill.windmill.web.common.FormDataMap;
 import io.windmill.windmill.web.common.UriBuilders;
@@ -47,15 +47,12 @@ import io.windmill.windmill.web.common.UriBuilders;
 public class AccountResource {
 
 	public static final Logger LOGGER = Logger.getLogger(AccountResource.class);
-	
-	public static final Map<Platform, Map<String, MessageAttributeValue>> attributesMap = new HashMap<Platform, Map<String, MessageAttributeValue>>();
-	static {
-		attributesMap.put(Platform.APNS, null);
-		attributesMap.put(Platform.APNS_SANDBOX, null);
-	}
-	
+
     @Inject
     private WindmillService windmillService;
+
+    @Inject
+    private AccountService accountService;
 
     @GET
     @Path("/{account}/windmill")
@@ -69,7 +66,7 @@ public class AccountResource {
 
     /**
      * 
-     * @param account_identifier
+     * @param account_identifier the account under which to create the given windmill. If the account does not exist, <b>it will be created</b>.
      * @param input a form with the following parameters, <b>plist</b>, <b>ipa</b> where plist is a 'manifest.xml' file and 'ipa' a binary IPA file as produced by the 'xcodebuild exportArchive' command.
      * @return
      * @throws URISyntaxException 
@@ -101,7 +98,7 @@ public class AccountResource {
 			
 			ByteArrayOutputStream byteArrayOutputStream = formDataMap.plistWithURLString(uri.toString());
 			
-			URI itms = windmillService.createOrUpdate(account_identifier, metadata, file, byteArrayOutputStream);
+			URI itms = windmillService.updateOrCreate(account_identifier, metadata, file, byteArrayOutputStream);
 			
 			try {
 				Files.delete(file.toPath());
@@ -114,11 +111,38 @@ public class AccountResource {
 			LOGGER.warn("Unabled to parse 'plist' passed as input", e.getCause());
 			return Response.status(Status.BAD_REQUEST).entity("The 'plist' parameter should be a 'manifest.xml' as referenced at https://developer.apple.com/library/content/documentation/IDEs/Conceptual/AppDistributionGuide/TestingYouriOSApp/TestingYouriOSApp.html").build();
 		} catch (IllegalArgumentException e) {
-			LOGGER.warn(e.getMessage(), e.getCause());
 			return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();
 		} catch (FileNotFoundException e) {
 			LOGGER.error(e.getMessage(), e.getCause());
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
+    }
+    
+    /**
+     * 
+     * @precondition the account <b>must</b> exist
+     * @param account_identifier the account under which to register the given device token. 
+     * @param token
+     * @return
+     */
+    @POST
+    @Path("/{account}/device/register")
+    @Produces(MediaType.APPLICATION_JSON)    
+    public Response register(@PathParam("account") final String account_identifier, @QueryParam("token") String token) {
+
+    	if (token == null) {
+    		return Response.status(Status.BAD_REQUEST).entity(String.format("Mandatory parameter 'token' is missing.")).build();
+    	}
+
+    	try {
+    		Device device = this.accountService.registerDevice(account_identifier, token);
+
+    		return Response.ok(device).build();
+    	} catch (IllegalArgumentException e){
+			return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();    		
+    	} catch (InternalErrorException e) {
+			LOGGER.error(e.getMessage(), e.getCause());
+			return Response.status(Status.INTERNAL_SERVER_ERROR).build();    		
+    	}
     }
 }

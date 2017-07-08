@@ -7,7 +7,9 @@
     <persistence-unit name="windmill-pu" transaction-type="RESOURCE_LOCAL">
         <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
         <class>io.windmill.windmill.persistence.Account</class>
-        <class>io.windmill.windmill.persistence.Windmill</class>                              
+        <class>io.windmill.windmill.persistence.Windmill</class> 
+        <class>io.windmill.windmill.persistence.Device</class>                              
+        <class>io.windmill.windmill.persistence.Endpoint</class>                                                                   
 	    <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
             <property name="eclipselink.logging.level" value="FINE" />

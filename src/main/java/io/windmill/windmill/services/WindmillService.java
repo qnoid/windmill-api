@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.UriBuilder;
@@ -20,10 +21,11 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 
 import io.windmill.windmill.common.Metadata;
+import io.windmill.windmill.persistence.Endpoint;
 import io.windmill.windmill.persistence.Windmill;
-import io.windmill.windmill.persistence.WindmillDAO;
+import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.services.Notification.Messages;
-import io.windmill.windmill.web.common.UriBuilders;
+import io.windmill.windmill.web.common.UriBuilders; 
 
 @ApplicationScoped
 public class WindmillService {
@@ -39,16 +41,21 @@ public class WindmillService {
     @Inject 
     StorageService storageService;
     
-	@Inject
-	private WindmillDAO windmillDAO;
+    @Inject
+    private WindmillEntityManager entityManager;
+
+    @PostConstruct
+    private void init() {
+    	entityManager = WindmillEntityManager.unwrapEJBExceptions(this.entityManager);        
+    }
 
 	public List<Windmill> get(String account_identifier) {
 		
-	      List<Windmill> windmills = this.windmillDAO.windmills(account_identifier);
+		List<Windmill> windmills = entityManager.getResultList("windmill.with_account_identifier", query -> query.setParameter("account_identifier", account_identifier));
+      
+		LOGGER.debug(String.format("Found: %s", windmills.size()));
 	      
-	      LOGGER.debug(String.format("Found: %s", windmills.size()));
-	      
-	      return windmills;
+	    return windmills;
 	}
 
 	/**
@@ -63,9 +70,9 @@ public class WindmillService {
 	 * @throws UriBuilderException 
 	 * @throws IllegalArgumentException 
 	 */
-	public URI createOrUpdate(String account_identifier, Metadata metadata, File ipa, ByteArrayOutputStream plist) throws FileNotFoundException, IllegalArgumentException, URISyntaxException 
+	public URI updateOrCreate(String account_identifier, Metadata metadata, File ipa, ByteArrayOutputStream plist) throws FileNotFoundException, IllegalArgumentException, URISyntaxException 
 	{
-		Windmill windmill = accountService.create(account_identifier, metadata.getIdentifier(), metadata.getTitle(), metadata.getVersion());
+		Windmill windmill = accountService.updateOrCreate(account_identifier, metadata.getIdentifier(), metadata.getTitle(), metadata.getVersion());
 	
 	    LOGGER.debug(String.format("Created or updated windmill for %s with metadata.bundle-identifier '%s', metadata.bundle-version '%s', metadata.title '%s'", account_identifier, windmill.getIdentifier(), windmill.getVersion(), windmill.getTitle()));
 
@@ -92,8 +99,13 @@ public class WindmillService {
 		
         String notification = Messages.of("New build", String.format("%s %s (455f6a1) is now available to install.", windmill.getTitle(), windmill.getVersion()));
         
-		notificationService.notify(notification, notificationService.createPlatform("e14113c658cd67f35a870433f4218d51233eba0cbdc02c88e80adaad1dcc94c6"));
+		List<Endpoint> endpoints = entityManager.getResultList("endpoint.find_by_account_identifier", query -> query.setParameter("account_identifier", account_identifier)); 
 
+		for (Endpoint endpoint : endpoints) {
+			String endpointArn = endpoint.getArn();
+			notificationService.notify(notification, endpointArn);
+		}
+		
 		String itmsURL = UriBuilders.createITMS(String.format("%s.plist", path));
 
 		LOGGER.debug(itmsURL);

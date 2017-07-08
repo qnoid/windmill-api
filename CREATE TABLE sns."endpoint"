@@ -1,0 +1,21 @@
+-- Table: sns.endpoint
+
+-- DROP TABLE sns.endpoint;
+
+CREATE TABLE sns.endpoint
+(
+  id SERIAL NOT NULL,
+  arn character varying NOT NULL, -- The Endpoint ARN as used by Amazon SNS to send a notification to a specific device as identified by the ARN
+  device_id integer,
+  CONSTRAINT endpoint_pkey PRIMARY KEY (id),
+  CONSTRAINT endpoint_arn_pkey UNIQUE (arn),
+  CONSTRAINT endpoint_device_id_fkey FOREIGN KEY (device_id)
+      REFERENCES public."device" (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE sns.endpoint
+  OWNER TO windmill;
+COMMENT ON COLUMN sns.endpoint.arn IS 'The Endpoint ARN as used by Amazon SNS to send a notification to a specific device as identified by the ARN';

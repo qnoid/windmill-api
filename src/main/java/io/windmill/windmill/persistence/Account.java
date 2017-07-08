@@ -20,7 +20,7 @@ import javax.validation.constraints.NotNull;
     @NamedQuery(name = "account.list", query = "SELECT a FROM Account a"),
     @NamedQuery(name = "account.find_by_identifier", query = "SELECT a FROM Account a WHERE a.identifier = :identifier")})
 public class Account {
-	
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,6 +31,9 @@ public class Account {
 
     @OneToMany(cascade = CascadeType.PERSIST, mappedBy="account")
     private Set<Windmill> windmills;
+
+    @OneToMany(cascade = CascadeType.PERSIST, mappedBy="account")
+    private Set<Device> devices;
 
     /**
      * 
@@ -56,5 +59,11 @@ public class Account {
 	public void add(Windmill windmill) {
 		windmill.account = this;		
 		this.windmills.add(windmill);
+	}
+	
+	public void add(Device device) {
+		device.account = this;		
+		this.devices.add(device);
 	}    
+
 }

@@ -54,11 +54,10 @@ This will package whithin your war, a persistence.xml that will point to an alre
 Navigate to the root (`/windmill`) of the project and execute.
 
 ```
-mvn clean install -Dpostgres.username=<SOMETHING>
-                  -Dpostgres.password=<SOMETHING> 
-                  -Dpostgres.url=<SOMETHING> 
-                  -Dpostgres.databaseName=<SOMETHING>
-                  -Dpostgres.schema=<SOMETHING>                  
+mvn clean install -Dpostgres.username=[windmill]
+                  -Dpostgres.password=[windmill]
+                  -Dpostgres.url=[jdbc:postgresql://localhost:5432/windmill]
+                  -Dpostgres.schema=[public]                 
 ```
 
 The above properties, should point to the 'AWS' specific postgres.
@@ -83,3 +82,7 @@ The current setup initializes windmill's RESTFul Api in the following url :
 
 Check if everything works. 
 `http://<IP>:8080/healthcheck`
+
+# Database
+
+See database.md

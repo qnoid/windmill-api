@@ -17,10 +17,9 @@ public class NotificationService {
     private static final Logger LOGGER = Logger.getLogger(NotificationService.class);
 
 	public static CreatePlatformEndpointRequest createPlatformEndpoint(
-			String customData, String token, String applicationArn) {
+			String token, String applicationArn) {
 		
 		CreatePlatformEndpointRequest platformEndpointRequest = new CreatePlatformEndpointRequest();
-		platformEndpointRequest.setCustomUserData(customData);
 		platformEndpointRequest.setToken(token);
 		platformEndpointRequest.setPlatformApplicationArn(applicationArn);
 		
@@ -43,10 +42,10 @@ public class NotificationService {
 		this.sns = AmazonSNSClientBuilder.defaultClient();
 	}
 
-	public boolean notify(String message, CreatePlatformEndpointResult platformEndpointResult) {
+	public boolean notify(String message, String endpointArn) {
 		
 		PublishRequest publishRequest = request(
-				platformEndpointResult.getEndpointArn(), Notification.Messages.on(Notification.Platform.APNS_SANDBOX, message));
+				endpointArn, Notification.Messages.on(Notification.Platform.APNS_SANDBOX, message));
 		
 		try {
 			PublishResult publishResult = sns.publish(publishRequest);
@@ -61,21 +60,15 @@ public class NotificationService {
 	}
 
 	public CreatePlatformEndpointResult createPlatform(String token) {
-		return createPlatform(token, "", "arn:aws:sns:eu-west-1:624879150004:app/APNS_SANDBOX/windmill");
+		return createPlatform(token, "arn:aws:sns:eu-west-1:624879150004:app/APNS_SANDBOX/windmill");
 	}
 
-	private CreatePlatformEndpointResult createPlatform(String token, String userData, String applicationArn) {
+	private CreatePlatformEndpointResult createPlatform(String token, String applicationArn) {
 		
 		CreatePlatformEndpointRequest platformEndpointRequest = createPlatformEndpoint(
-				userData,
 				token,
 				applicationArn);
 
-		try {
-			return sns.createPlatformEndpoint(platformEndpointRequest);
-		} catch (RuntimeException e) {
-			LOGGER.error(e.getMessage(), e.getCause());
-			throw e;
-		}		
+		return sns.createPlatformEndpoint(platformEndpointRequest);
 	}
 }
