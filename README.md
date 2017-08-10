@@ -1,4 +1,4 @@
-WindMill.io Backend
+Windmill.io Backend
 ===================
 
 
