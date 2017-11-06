@@ -12,8 +12,7 @@ public class Notification {
 			.add("aps", Json.createObjectBuilder()
 				.add("alert", Json.createObjectBuilder()
 						.add("title", title)
-						.add("body", body))
-				.add("sound", "default"))
+						.add("body", body)))
 			.build();
 			
 			return value.toString();

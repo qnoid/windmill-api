@@ -103,7 +103,10 @@ public class WindmillService {
 
 		for (Endpoint endpoint : endpoints) {
 			String endpointArn = endpoint.getArn();
-			notificationService.notify(notification, endpointArn);
+			boolean success = notificationService.notify(notification, endpointArn);
+			if (success) {
+				LOGGER.info(String.format("Succesfully sent notification to endpoint '%s' for account '%s'.", endpoint, account_identifier));
+			}
 		}
 		
 		String itmsURL = UriBuilders.createITMS(String.format("%s.plist", path));
