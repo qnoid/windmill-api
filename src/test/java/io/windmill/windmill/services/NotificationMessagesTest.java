@@ -15,8 +15,7 @@ public class NotificationMessagesTest {
 				+ 	"\"alert\":{"
 				+ 		"\"title\":\"New build\","
 				+ 		"\"body\":\"foo 1.0 (455f6a1) is now available to install.\""
-				+ 	"},"
-				+ 	"\"sound\":\"default\"}"
+				+ 	"}}"
 				+ "}";
 		
 		String sampleAppleMessage = Notification.Messages.of("New build", String.format("%s %s (455f6a1) is now available to install.", "foo", 1.0));
@@ -29,6 +28,6 @@ public class NotificationMessagesTest {
 		String expected = Messages.of("New build", String.format("%s %s (455f6a1) is now available to install.", "foo", 1.0));
 		String actual = Platform.APNS_SANDBOX.message(expected);
 		
-		Assert.assertEquals("{\"APNS_SANDBOX\":\"{\\\"aps\\\":{\\\"alert\\\":{\\\"title\\\":\\\"New build\\\",\\\"body\\\":\\\"foo 1.0 (455f6a1) is now available to install.\\\"},\\\"sound\\\":\\\"default\\\"}}\"}", actual);
+		Assert.assertEquals("{\"APNS_SANDBOX\":\"{\\\"aps\\\":{\\\"alert\\\":{\\\"title\\\":\\\"New build\\\",\\\"body\\\":\\\"foo 1.0 (455f6a1) is now available to install.\\\"}}}\"}", actual);
 	}
 }

@@ -19,6 +19,7 @@ import org.jboss.logging.Logger;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.sns.model.EndpointDisabledException;
 
 import io.windmill.windmill.common.Metadata;
 import io.windmill.windmill.persistence.Endpoint;
@@ -103,9 +104,15 @@ public class WindmillService {
 
 		for (Endpoint endpoint : endpoints) {
 			String endpointArn = endpoint.getArn();
-			boolean success = notificationService.notify(notification, endpointArn);
-			if (success) {
-				LOGGER.info(String.format("Succesfully sent notification to endpoint '%s' for account '%s'.", endpoint, account_identifier));
+			
+			try {
+				boolean success = notificationService.notify(notification, endpointArn);
+				if (success) {
+					LOGGER.info(String.format("Succesfully sent notification to endpoint '%s' for account '%s'.", endpoint, account_identifier));
+				}
+			}
+			catch (EndpointDisabledException e) {
+				LOGGER.debug(String.format("Endpoint `%s` is reported as disabled by AmazonSNS.", endpoint.getArn()), e);
 			}
 		}
 		

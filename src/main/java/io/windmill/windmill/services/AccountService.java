@@ -29,22 +29,30 @@ public class AccountService {
 
     @Inject
 	private NotificationService notificationService;
-   
-    @PostConstruct
+        
+    public AccountService() {
+		super();
+	}
+
+	public AccountService(WindmillEntityManager entityManager, NotificationService notificationService) {
+		this.entityManager = entityManager;
+		this.notificationService = notificationService;
+	}
+
+	@PostConstruct
     private void init() {
     	entityManager = WindmillEntityManager.unwrapEJBExceptions(this.entityManager);        
     }
 
 	public <T> T findOrProvide(String name, QueryConfiguration<T> queryConfiguration, Provider<T> inCaseOfNoResultException) {
-
-        try {
-			return entityManager.getSingleResult(name, queryConfiguration);
-        }
-        catch (NoResultException e) {
-            return inCaseOfNoResultException.get();
-        }
+		try {
+			return this.entityManager.getSingleResult(name, queryConfiguration);
+		}
+		catch (NoResultException e) {
+		    return inCaseOfNoResultException.get();
+		}
     }
-
+	
 	private Account get(String account_identifier) {
 		return this.entityManager.getSingleResult("account.find_by_identifier", identitifier(account_identifier));
 	}
@@ -85,7 +93,6 @@ public class AccountService {
 			throw new IllegalArgumentException(message);
     	}
     	
-		String endpointArn = notificationService.createPlatform(token).getEndpointArn();
 		Device device = this.findOrProvide("device.find_by_token", query -> query.setParameter("token", token), new Provider<Device>() {
 		
 			@Override
@@ -97,6 +104,9 @@ public class AccountService {
 				return device;
 			}
 		});
+
+		String endpointArn = notificationService.createPlatformEndpoint(token).getEndpointArn();		
+		notificationService.enable(endpointArn);		
 
 		Endpoint endpoint = this.findOrProvide("endpoint.find_by_device_token", query -> query.setParameter("device_token", token), () -> new Endpoint(endpointArn, device));
 		endpoint.getDevice().setUpdatedAt(Instant.now());

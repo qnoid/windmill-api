@@ -27,11 +27,27 @@ public class Notification {
 		APNS,
 		APNS_SANDBOX;
 
+		private static final boolean DEBUG = true;
+		
+		public static Platform getInstance() {
+			
+			if (DEBUG) {
+				return APNS_SANDBOX;
+			}
+			else {
+				return APNS;
+			}			
+		}
+		
 		String message(String message) {			
 			 JsonObject value = Json.createObjectBuilder()
 				.add(this.name(), message).build();
 		
 			return value.toString();
+		}
+		
+		String getApplicationArn() {
+			return String.format("arn:aws:sns:eu-west-1:624879150004:app/%s/windmill", this.name());
 		}
 	}
 }

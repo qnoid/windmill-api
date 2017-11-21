@@ -47,7 +47,7 @@
 		<junit.junit.version>4.8.2</junit.junit.version>		
 		<org.apache.derby.derby.version>10.13.1.1</org.apache.derby.derby.version>
 		<org.apache.derby.derbyclient.version>10.13.1.1</org.apache.derby.derbyclient.version>
-		<org.eclipse.persistence.eclipselink>2.6.0</org.eclipse.persistence.eclipselink>
+		<org.eclipse.persistence.eclipselink>2.7.0</org.eclipse.persistence.eclipselink>
 		
         <!-- other plugin versions -->
         <version.maven.wildfly.plugin>1.0.2.Final</version.maven.wildfly.plugin>
