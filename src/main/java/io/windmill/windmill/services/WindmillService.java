@@ -98,7 +98,7 @@ public class WindmillService {
 			throw new StorageServiceException(amazonException);
 		}
 		
-        String notification = Messages.of("New build", String.format("%s %s (455f6a1) is now available to install.", windmill.getTitle(), windmill.getVersion()));
+        String notification = Messages.of("New build", String.format("%s %s is now available to install.", windmill.getTitle(), windmill.getVersion()));
         
 		List<Endpoint> endpoints = entityManager.getResultList("endpoint.find_by_account_identifier", query -> query.setParameter("account_identifier", account_identifier)); 
 
