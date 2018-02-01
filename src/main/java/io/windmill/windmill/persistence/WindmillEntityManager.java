@@ -5,7 +5,11 @@ import java.util.List;
 import javax.ejb.EJBException;
 import javax.persistence.NoResultException;
 
+import org.jboss.logging.Logger;
+
 public interface WindmillEntityManager {
+
+    static final Logger LOGGER = Logger.getLogger(WindmillEntityManager.class);
 
 	<T> void persist(T obj);
 
@@ -20,7 +24,7 @@ public interface WindmillEntityManager {
 
 	public static WindmillEntityManager unwrapEJBExceptions(final WindmillEntityManager wem) {
 		return new WindmillEntityManager() {
-			
+					    
 			@Override
 			public <T> void persist(T objc) {
 				wem.persist(objc);
@@ -42,6 +46,7 @@ public interface WindmillEntityManager {
 		    		if (cause instanceof NoResultException) {
 		    			throw (NoResultException) cause;
 		    		} else {
+		    			LOGGER.error(e.getMessage(), e);		    			
 		    			throw (RuntimeException) e;
 		    		}
 		    	}

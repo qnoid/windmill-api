@@ -49,6 +49,7 @@ public class AccountService {
 			return this.entityManager.getSingleResult(name, queryConfiguration);
 		}
 		catch (NoResultException e) {
+			LOGGER.debug(String.format("NoResultException: %s", e.getMessage()));            			
 		    return inCaseOfNoResultException.get();
 		}
     }
@@ -77,7 +78,7 @@ public class AccountService {
 		
 		account.add(windmill);
 		
-		this.entityManager.merge(account);
+		this.entityManager.persist(account);
 		
 		return windmill;
 	}
