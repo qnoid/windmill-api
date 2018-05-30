@@ -36,9 +36,9 @@ public class Device {
     @NotNull
     private Instant createdAt;
 
-    @Column(name="updated_at")
+    @Column(name="modified_at")
     @NotNull
-    private Instant updatedAt;
+    private Instant modifiedAt;
 
     @ManyToOne
     @NotNull
@@ -59,7 +59,7 @@ public class Device {
     {
       this.token = token;
       this.account = account;
-      this.createdAt = this.updatedAt = Instant.now();
+      this.createdAt = this.modifiedAt = Instant.now();
     }
         
     
@@ -89,12 +89,12 @@ public class Device {
 	}
 
 	@JsonSerialize(using=CustomJsonInstantSerializer.class)
-	public Instant getUpdatedAt() {
-		return updatedAt;
+	public Instant getModifiedAt() {
+		return modifiedAt;
 	}
 
-	public void setUpdatedAt(Instant updatedAt) {
-		this.updatedAt = updatedAt;
+	public void setModifiedAt(Instant updatedAt) {
+		this.modifiedAt = updatedAt;
 	}
 
 	@Override

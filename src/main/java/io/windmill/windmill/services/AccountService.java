@@ -11,12 +11,14 @@ import javax.persistence.NoResultException;
 
 import org.jboss.logging.Logger;
 
+import com.google.common.base.Preconditions;
+
 import io.windmill.windmill.persistence.Account;
 import io.windmill.windmill.persistence.Device;
 import io.windmill.windmill.persistence.Endpoint;
+import io.windmill.windmill.persistence.Export;
 import io.windmill.windmill.persistence.Provider;
 import io.windmill.windmill.persistence.QueryConfiguration;
-import io.windmill.windmill.persistence.Windmill;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 
 @ApplicationScoped
@@ -58,11 +60,14 @@ public class AccountService {
 		return this.entityManager.getSingleResult("account.find_by_identifier", identitifier(account_identifier));
 	}
     
-	public Windmill updateOrCreate(String account_identifier, String windmill_identifier, String windmill_title,
-			Double windmill_version) {
+	public Export updateOrCreate(String account_identifier, String export_identifier, String export_title,
+			Double export_version) throws IllegalArgumentException {
 
-		Windmill windmill = this.findOrProvide("windmill.find_by_identifier", identitifier(windmill_identifier), () -> new Windmill(windmill_identifier, windmill_version, windmill_title) );
-		windmill.setUpdatedAt(Instant.now());
+		Export export = this.findOrProvide("export.find_by_identifier", identitifier(export_identifier), () -> new Export(export_identifier, export_version, export_title) );
+		
+		Preconditions.checkArgument(export.account(account_identifier), "io.windmill.api: error: The bundle identifier is already used by another account.\n");
+
+		export.setModifiedAt(Instant.now());
 		
 		Account account = this.findOrProvide("account.find_by_identifier", identitifier(account_identifier), new Provider<Account>(){
 
@@ -73,14 +78,15 @@ public class AccountService {
 				return account;
 			}			
 		});
+		account.setModifiedAt(Instant.now());
 		
 		LOGGER.debug(String.format("Found: %s", account.getIdentifier()));            
 		
-		account.add(windmill);
+		account.add(export);
 		
 		this.entityManager.persist(account);
 		
-		return windmill;
+		return export;
 	}
 	
 	public Device registerDevice(String account_identifier, String token) {
@@ -90,7 +96,7 @@ public class AccountService {
     	try {
     		account = this.get(account_identifier);
     	} catch (NoResultException e){
-    		String message = String.format("No account was found for identifier '%s'. This call requires an existing account to register a device for. Hint: POST \"/{account}/windmill\" creates an account.", account_identifier);    		
+    		String message = String.format("No account was found for identifier '%s'. This call requires an existing account to register a device for. Hint: POST \"/{account}/export\" creates an account.", account_identifier);    		
 			throw new IllegalArgumentException(message);
     	}
     	
@@ -110,7 +116,7 @@ public class AccountService {
 		notificationService.enable(endpointArn);		
 
 		Endpoint endpoint = this.findOrProvide("endpoint.find_by_device_token", query -> query.setParameter("device_token", token), () -> new Endpoint(endpointArn, device));
-		endpoint.getDevice().setUpdatedAt(Instant.now());
+		endpoint.getDevice().setModifiedAt(Instant.now());
 		endpoint.setArn(endpointArn);
 		
 		this.entityManager.merge(endpoint);

@@ -21,12 +21,12 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.sns.model.EndpointDisabledException;
 
-import io.windmill.windmill.common.Metadata;
+import io.windmill.windmill.common.Manifest;
 import io.windmill.windmill.persistence.Endpoint;
-import io.windmill.windmill.persistence.Windmill;
+import io.windmill.windmill.persistence.Export;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.services.Notification.Messages;
-import io.windmill.windmill.web.common.UriBuilders; 
+import io.windmill.windmill.web.common.UriBuilders;
 
 @ApplicationScoped
 public class WindmillService {
@@ -50,19 +50,19 @@ public class WindmillService {
     	entityManager = WindmillEntityManager.unwrapEJBExceptions(this.entityManager);        
     }
 
-	public List<Windmill> get(String account_identifier) {
+	public List<Export> get(String account_identifier) {
 		
-		List<Windmill> windmills = entityManager.getResultList("windmill.with_account_identifier", query -> query.setParameter("account_identifier", account_identifier));
+		List<Export> exports = entityManager.getResultList("export.with_account_identifier", query -> query.setParameter("account_identifier", account_identifier));
       
-		LOGGER.debug(String.format("Found: %s", windmills.size()));
+		LOGGER.debug(String.format("Found: %s", exports.size()));
 	      
-	    return windmills;
+	    return exports;
 	}
 
 	/**
 	 * 
 	 * @param account_identifier
-	 * @param metadata
+	 * @param manifest
 	 * @param ipa
 	 * @param plist
 	 * @return a URI in the itms format, e.g. "itms-services://?action=download-manifest&url=https://ota.windmill.io/14810686-4690-4900-ADA5-8B0B7338AA39/io.windmill.windmill/1.0/windmill.plist"
@@ -71,16 +71,16 @@ public class WindmillService {
 	 * @throws UriBuilderException 
 	 * @throws IllegalArgumentException 
 	 */
-	public URI updateOrCreate(String account_identifier, Metadata metadata, File ipa, ByteArrayOutputStream plist) throws FileNotFoundException, IllegalArgumentException, URISyntaxException 
+	public URI updateOrCreate(String account_identifier, Manifest manifest, File ipa, ByteArrayOutputStream plist) throws FileNotFoundException, IllegalArgumentException, URISyntaxException 
 	{
-		Windmill windmill = accountService.updateOrCreate(account_identifier, metadata.getIdentifier(), metadata.getTitle(), metadata.getVersion());
+		Export export = accountService.updateOrCreate(account_identifier, manifest.getIdentifier(), manifest.getTitle(), manifest.getVersion());
 	
-	    LOGGER.debug(String.format("Created or updated windmill for %s with metadata.bundle-identifier '%s', metadata.bundle-version '%s', metadata.title '%s'", account_identifier, windmill.getIdentifier(), windmill.getVersion(), windmill.getTitle()));
+	    LOGGER.debug(String.format("Created or updated windmill for %s with metadata.bundle-identifier '%s', metadata.bundle-version '%s', metadata.title '%s'", account_identifier, export.getIdentifier(), export.getVersion(), export.getTitle()));
 
 		URI path = UriBuilder.fromPath(account_identifier)
-				.path(metadata.getIdentifier())
-				.path(String.valueOf(metadata.getVersion()))
-				.path(metadata.getTitle())
+				.path(manifest.getIdentifier())
+				.path(String.valueOf(manifest.getVersion()))
+				.path(manifest.getTitle())
 				.build();		
 		
 		try {
@@ -98,7 +98,7 @@ public class WindmillService {
 			throw new StorageServiceException(amazonException);
 		}
 		
-        String notification = Messages.of("New build", String.format("%s %s is now available to install.", windmill.getTitle(), windmill.getVersion()));
+		 String notification = Messages.of("New build", String.format("%s %s is now available to install.", export.getTitle(), export.getVersion()));
         
 		List<Endpoint> endpoints = entityManager.getResultList("endpoint.find_by_account_identifier", query -> query.setParameter("account_identifier", account_identifier)); 
 

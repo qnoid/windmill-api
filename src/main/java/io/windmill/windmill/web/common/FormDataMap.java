@@ -18,7 +18,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
-import io.windmill.windmill.common.Metadata;
+import io.windmill.windmill.common.Manifest;
 
 public class FormDataMap {
 
@@ -47,13 +47,13 @@ public class FormDataMap {
 		}
 	}
 
-	public File cacheIPA(String account_identifier, Metadata metadata) throws IllegalArgumentException {
+	public File cacheIPA(String account_identifier, Manifest manifest) throws IllegalArgumentException {
 		InputStream stream = this.read("ipa");
 		
 		try {
-			Path path = Paths.get("/tmp", account_identifier, metadata.getIdentifier(), String.valueOf(metadata.getVersion()));
+			Path path = Paths.get("/tmp", account_identifier, manifest.getIdentifier(), String.valueOf(manifest.getVersion()));
 			Files.createDirectories(path);
-			File file = new File(path.toFile(), String.format("%s.ipa", metadata.getTitle()));
+			File file = new File(path.toFile(), String.format("%s.ipa", manifest.getTitle()));
 			
 			Files.copy(stream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
 			
@@ -64,10 +64,10 @@ public class FormDataMap {
 		}
 	}
 
-	public Metadata readMetadata() throws IllegalArgumentException, ConfigurationException {		
+	public Manifest readManifest() throws IllegalArgumentException, ConfigurationException {		
 		InputStreamReader reader = new InputStreamReader(this.read("plist"), Charset.forName("UTF-8"));
 		
-		return Metadata.read(reader);
+		return Manifest.read(reader);
 	}
 	
 	public ByteArrayOutputStream plistWithURLString(String urlString) throws IllegalArgumentException {		

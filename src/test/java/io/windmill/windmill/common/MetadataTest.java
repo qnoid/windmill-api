@@ -18,7 +18,7 @@ public class MetadataTest {
 		InputStream in = new ByteArrayInputStream(data);
 		InputStreamReader inputStreamReader = new InputStreamReader(in);
 		
-		Metadata.read(inputStreamReader);
+		Manifest.read(inputStreamReader);
 	}
 
 	@Test
@@ -27,7 +27,7 @@ public class MetadataTest {
 		InputStream in = this.getClass().getResourceAsStream("/sample.plist");
 		InputStreamReader inputStreamReader = new InputStreamReader(in);
 		
-		Metadata metadata = Metadata.read(inputStreamReader);
+		Manifest metadata = Manifest.read(inputStreamReader);
 		
 		Assert.assertEquals("io.windmill.windmill", metadata.getIdentifier());
 		Assert.assertEquals(1.0, metadata.getVersion());
