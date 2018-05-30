@@ -15,18 +15,18 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.plist.XMLPropertyListConfiguration;
 
-public class Metadata {
+public class Manifest {
 
-	public static Metadata read(InputStreamReader inputStreamReader) throws ConfigurationException {
+	public static Manifest read(InputStreamReader inputStreamReader) throws ConfigurationException {
 				
 		XMLPropertyListConfiguration xmlPropertyListConfiguration = new XMLPropertyListConfiguration();			
 		xmlPropertyListConfiguration.read(new BufferedReader(inputStreamReader));
 		XMLPropertyListConfiguration items = xmlPropertyListConfiguration.get(XMLPropertyListConfiguration.class, "items");
-        String windmill_identifier = items.getString("metadata.bundle-identifier");
-        Double windmill_version = items.getDouble("metadata.bundle-version");
-        String windmill_title = items.getString("metadata.title");
+        String bundle_identifier = items.getString("metadata.bundle-identifier");
+        Double bundle_version = items.getDouble("metadata.bundle-version");
+        String bundle_title = items.getString("metadata.title");
         
-        return new Metadata(windmill_identifier, windmill_version, windmill_title);
+        return new Manifest(bundle_identifier, bundle_version, bundle_title);
 	}
 	
     @NotNull
@@ -38,7 +38,7 @@ public class Metadata {
     @NotNull
     private String title;
 
-	public Metadata(String identifier, Double version, String title) {
+	public Manifest(String identifier, Double version, String title) {
 		this.identifier = identifier;
 		this.version = version;
 		this.title = title;

@@ -24,11 +24,11 @@ import io.windmill.windmill.web.common.UriBuilders;
 
 @Entity
 @NamedQueries({
-        @NamedQuery(name = "windmill.with_account_identifier", query = "SELECT w FROM Windmill w WHERE w.account.identifier = :account_identifier"),
-        @NamedQuery(name = "windmill.find_by_identifier", query = "SELECT w FROM Windmill w WHERE w.identifier = :identifier")})
-public class Windmill {
+        @NamedQuery(name = "export.with_account_identifier", query = "SELECT e FROM Export e WHERE e.account.identifier = :account_identifier"),
+        @NamedQuery(name = "export.find_by_identifier", query = "SELECT e FROM Export e WHERE e.identifier = :identifier")})
+public class Export {
 	
-    @Id
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -42,9 +42,13 @@ public class Windmill {
     @NotNull
     private String title;
 
-    @Column(name="updated_at")
+    @Column(name="created_at")
     @NotNull
-    private Instant updatedAt;
+    private Instant createdAt;
+
+    @Column(name="modified_at")
+    @NotNull
+    private Instant modifiedAt;
 
     @ManyToOne
     @NotNull
@@ -56,7 +60,7 @@ public class Windmill {
     /**
      * 
      */
-    public Windmill()
+    public Export()
     {
       // TODO Auto-generated constructor stub
     }
@@ -64,12 +68,12 @@ public class Windmill {
     /**
      * 
      */
-    public Windmill(String identifier, Double version, String title)
+    public Export(String identifier, Double version, String title)
     {
       this.identifier = identifier;
       this.version = version;
       this.title = title;
-      this.updatedAt = Instant.now();
+      this.createdAt = this.modifiedAt = Instant.now();
     }
         
     
@@ -105,17 +109,26 @@ public class Windmill {
 		this.title = title;
 	}	
 	
-    @JsonSerialize(using=CustomJsonInstantSerializer.class)
-	public Instant getUpdatedAt() {
-		return updatedAt;
+	@JsonSerialize(using=CustomJsonInstantSerializer.class)
+	public Instant getCreatedAt() {
+		return createdAt;
 	}
 
-	public void setUpdatedAt(Instant updatedAt) {
-		this.updatedAt = updatedAt;
+	public void setCreatedAt(Instant createdAt) {
+		this.createdAt = createdAt;
+	}
+	
+    @JsonSerialize(using=CustomJsonInstantSerializer.class)
+	public Instant getModifiedAt() {
+		return modifiedAt;
+	}
+
+	public void setModifiedAt(Instant updatedAt) {
+		this.modifiedAt = updatedAt;
 	}
 
 	public boolean account(String accountIdentifier) {
-		return this.account.getIdentifier().equals(accountIdentifier);
+		return this.account != null && this.account.getIdentifier().equals(accountIdentifier);
 	}
 	
 	public void setURL(String URL) {
@@ -149,12 +162,12 @@ public class Windmill {
 		if (this == that)
 			return true;
 		
-		if (!(that instanceof Windmill))
+		if (!(that instanceof Export))
 			return false;
 		
-		Windmill windmill = (Windmill) that;
+		Export export = (Export) that;
 		
-		return this.identifier.equals(windmill.identifier);
+		return this.identifier.equals(export.identifier);
 	}
 	
 	@Override

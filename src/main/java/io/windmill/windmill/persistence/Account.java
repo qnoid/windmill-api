@@ -1,6 +1,7 @@
 
 package io.windmill.windmill.persistence;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,6 +15,10 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import io.windmill.windmill.web.CustomJsonInstantSerializer;
 
 @Entity
 @NamedQueries({
@@ -29,12 +34,20 @@ public class Account {
     @NotNull
     private String identifier;
 
+    @Column(name="created_at")
+    @NotNull
+    private Instant createdAt;
+
+    @Column(name="modified_at")
+    @NotNull
+    private Instant modifiedAt;
+    
     @OneToMany(cascade = CascadeType.PERSIST, mappedBy="account")
-    private Set<Windmill> windmills;
+    private Set<Export> exports;
 
     @OneToMany(cascade = CascadeType.PERSIST, mappedBy="account")
     private Set<Device> devices;
-
+    
     /**
      * 
      */
@@ -45,7 +58,8 @@ public class Account {
         
 	public Account(String identifier) {
 		this.identifier = identifier;
-		this.windmills = new HashSet<Windmill>();
+	    this.createdAt = this.modifiedAt = Instant.now();		
+		this.exports = new HashSet<Export>();
 	}
 
 	public String getIdentifier() {
@@ -56,9 +70,27 @@ public class Account {
 		this.identifier = identifier;
 	}
 
-	public void add(Windmill windmill) {
-		windmill.account = this;		
-		this.windmills.add(windmill);
+	@JsonSerialize(using=CustomJsonInstantSerializer.class)
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(Instant createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	@JsonSerialize(using=CustomJsonInstantSerializer.class)
+	public Instant getModifiedAt() {
+		return modifiedAt;
+	}
+
+	public void setModifiedAt(Instant updatedAt) {
+		this.modifiedAt = updatedAt;
+	}
+	
+	public void add(Export export) {
+		export.account = this;		
+		this.exports.add(export);
 	}
 	
 	public void add(Device device) {

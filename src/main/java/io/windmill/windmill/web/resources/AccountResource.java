@@ -10,7 +10,6 @@ import java.nio.file.Files;
 import java.util.List;
 
 import javax.inject.Inject;
-import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -30,9 +29,9 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import com.amazonaws.services.sns.model.InternalErrorException;
 
-import io.windmill.windmill.common.Metadata;
+import io.windmill.windmill.common.Manifest;
 import io.windmill.windmill.persistence.Device;
-import io.windmill.windmill.persistence.Windmill;
+import io.windmill.windmill.persistence.Export;
 import io.windmill.windmill.services.AccountService;
 import io.windmill.windmill.services.WindmillService;
 import io.windmill.windmill.web.common.FormDataMap;
@@ -56,13 +55,13 @@ public class AccountResource {
     private AccountService accountService;
 
     @GET
-    @Path("/{account}/windmill")
+    @Path("/{account}/exports")
     @Produces(MediaType.APPLICATION_JSON)    
     public Response read(@PathParam("account") final String account_identifier) {
 
-      List<Windmill> windmills = this.windmillService.get(account_identifier);
+      List<Export> exports = this.windmillService.get(account_identifier);
       
-      return Response.ok(windmills).build();      
+      return Response.ok(exports).build();      
     }
 
     /**
@@ -75,7 +74,7 @@ public class AccountResource {
      * @see <a href="https://developer.apple.com/legacy/library/documentation/Darwin/Reference/ManPages/man1/xcodebuild.1.html">xcodebuild</a>
      */
     @POST
-    @Path("/{account}/windmill")
+    @Path("/{account}/export")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
@@ -84,7 +83,7 @@ public class AccountResource {
     	FormDataMap formDataMap = FormDataMap.get(input);
     	
 		try {
-			Metadata metadata = formDataMap.readMetadata();
+			Manifest metadata = formDataMap.readManifest();
 			File file = formDataMap.cacheIPA(account_identifier, metadata);
 			
 			URI path = UriBuilder.fromPath(account_identifier)
@@ -144,6 +143,6 @@ public class AccountResource {
     	} catch (InternalErrorException e) {
 			LOGGER.error(e.getMessage(), e.getCause());
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();    		
-    	}
+		}
     }
 }
