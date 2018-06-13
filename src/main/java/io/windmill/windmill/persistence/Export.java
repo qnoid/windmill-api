@@ -52,7 +52,7 @@ public class Export {
 
     @ManyToOne
     @NotNull
-    Account account;
+    public Account account;
     
     @SuppressWarnings("unused")
 	transient private String URL;

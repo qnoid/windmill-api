@@ -27,7 +27,7 @@ public class Notification {
 		APNS,
 		APNS_SANDBOX;
 
-		private static final boolean DEBUG = true;
+		private static final boolean DEBUG = false;
 		
 		public static Platform getInstance() {
 			

@@ -65,7 +65,7 @@ public class AccountService {
 
 		Export export = this.findOrProvide("export.find_by_identifier", identitifier(export_identifier), () -> new Export(export_identifier, export_version, export_title) );
 		
-		Preconditions.checkArgument(export.account(account_identifier), "io.windmill.api: error: The bundle identifier is already used by another account.\n");
+		Preconditions.checkArgument(export.account == null || export.account(account_identifier), "io.windmill.api: error: The bundle identifier is already used by another account.\n");
 
 		export.setModifiedAt(Instant.now());
 		
