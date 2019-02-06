@@ -1,17 +1,17 @@
 package io.windmill.windmill.web.resources;
 
-import java.time.LocalDateTime;
-
-import javax.ws.rs.GET;
+import javax.ws.rs.HEAD;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 @Path("/healthcheck")
 public class HealthCheckResource {
-    @GET
+    @HEAD
     @Produces(MediaType.APPLICATION_JSON)
-    public String status(){
-        return "WindMill server works "+ LocalDateTime.now();
+    public Response status(){
+        return Response.status(Status.OK).build();
     }
 }

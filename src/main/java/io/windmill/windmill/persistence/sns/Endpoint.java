@@ -1,4 +1,4 @@
-package io.windmill.windmill.persistence;
+package io.windmill.windmill.persistence.sns;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -11,6 +11,8 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
+
+import io.windmill.windmill.persistence.Device;
 
 @Entity
 @Table(schema="sns")

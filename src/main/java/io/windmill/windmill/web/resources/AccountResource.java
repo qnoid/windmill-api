@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
@@ -57,7 +58,7 @@ public class AccountResource {
     @GET
     @Path("/{account}/exports")
     @Produces(MediaType.APPLICATION_JSON)    
-    public Response read(@PathParam("account") final String account_identifier) {
+    public Response read(@PathParam("account") final UUID account_identifier) {
 
       List<Export> exports = this.windmillService.get(account_identifier);
       
@@ -68,8 +69,7 @@ public class AccountResource {
      * 
      * @param account_identifier the account under which to create the given windmill. If the account does not exist, <b>it will be created</b>.
      * @param input a form with the following parameters, <b>plist</b>, <b>ipa</b> where plist is a 'manifest.xml' file and 'ipa' a binary IPA file as produced by the 'xcodebuild exportArchive' command.
-     * @return
-     * @throws URISyntaxException 
+     * @return 
      * @throws FileNotFoundException 
      * @see <a href="https://developer.apple.com/legacy/library/documentation/Darwin/Reference/ManPages/man1/xcodebuild.1.html">xcodebuild</a>
      */
@@ -78,15 +78,15 @@ public class AccountResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    public Response create(@PathParam("account") final String account_identifier, final MultipartFormDataInput input) throws URISyntaxException {
+    public Response create(@PathParam("account") final UUID account_identifier, final MultipartFormDataInput input) {
 
     	FormDataMap formDataMap = FormDataMap.get(input);
     	
 		try {
 			Manifest metadata = formDataMap.readManifest();
-			File file = formDataMap.cacheIPA(account_identifier, metadata);
+			File file = formDataMap.cacheIPA(account_identifier.toString(), metadata);
 			
-			URI path = UriBuilder.fromPath(account_identifier)
+			URI path = UriBuilder.fromPath(account_identifier.toString())
 					.path(metadata.getIdentifier())
 					.path(String.valueOf(metadata.getVersion()))
 					.path(metadata.getTitle())
@@ -112,7 +112,7 @@ public class AccountResource {
 			return Response.status(Status.BAD_REQUEST).entity("The 'plist' parameter should be a 'manifest.xml' as referenced at https://developer.apple.com/library/content/documentation/IDEs/Conceptual/AppDistributionGuide/TestingYouriOSApp/TestingYouriOSApp.html").build();
 		} catch (IllegalArgumentException e) {
 			return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();
-		} catch (FileNotFoundException e) {
+		} catch (FileNotFoundException | URISyntaxException e) {
 			LOGGER.error(e.getMessage(), e.getCause());
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -128,7 +128,8 @@ public class AccountResource {
     @POST
     @Path("/{account}/device/register")
     @Produces(MediaType.APPLICATION_JSON)    
-    public Response register(@PathParam("account") final String account_identifier, @QueryParam("token") String token) {
+    @Transactional
+    public Response register(@PathParam("account") final UUID account_identifier, @QueryParam("token") String token) {
 
     	if (token == null) {
     		return Response.status(Status.BAD_REQUEST).entity(String.format("Mandatory parameter 'token' is missing.")).build();

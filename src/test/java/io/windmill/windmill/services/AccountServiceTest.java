@@ -2,6 +2,8 @@ package io.windmill.windmill.services;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.UUID;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -29,9 +31,9 @@ public class AccountServiceTest {
     
 	@Before
 	public void before() {
-		String account_identifier = "14810686-4690-4900-ADA5-8B0B7338AA39";
+		String account_identifier = "14810686-4690-4900-ada5-8b0b7338aa39";
 		em.getTransaction().begin();
-		em.persist(new Account(account_identifier));
+		em.persist(new Account(UUID.fromString(account_identifier)));
 		em.flush();
 	}
 	
@@ -48,7 +50,7 @@ public class AccountServiceTest {
 		AccountService accountService = new AccountService(entityManager, notificationService);
 		
 		String token = "651743ecad5704a088ff54a0234f37a013bd17b3401d1612cb8ded8af1fa2225";
-		Device device = accountService.registerDevice("14810686-4690-4900-ADA5-8B0B7338AA39", token);
+		Device device = accountService.registerDevice(UUID.fromString("14810686-4690-4900-ada5-8b0b7338aa39"), token);
 		
 		assertEquals(token, device.getToken());
 	}

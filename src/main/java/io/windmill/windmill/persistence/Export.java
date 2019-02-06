@@ -4,7 +4,11 @@ package io.windmill.windmill.persistence;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
+import java.util.UUID;
 
+import javax.json.bind.annotation.JsonbProperty;
+import javax.json.bind.annotation.JsonbTransient;
+import javax.json.bind.annotation.JsonbTypeAdapter;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -13,13 +17,12 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriBuilderException;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import io.windmill.windmill.web.CustomJsonInstantSerializer;
+import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 import io.windmill.windmill.web.common.UriBuilders;
 
 @Entity
@@ -52,10 +55,13 @@ public class Export {
 
     @ManyToOne
     @NotNull
+    @JsonbTransient
     public Account account;
     
     @SuppressWarnings("unused")
-	transient private String URL;
+    @Transient
+    @JsonbProperty("url")
+	private String URL;
     
     /**
      * 
@@ -109,7 +115,7 @@ public class Export {
 		this.title = title;
 	}	
 	
-	@JsonSerialize(using=CustomJsonInstantSerializer.class)
+	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
 	public Instant getCreatedAt() {
 		return createdAt;
 	}
@@ -118,7 +124,7 @@ public class Export {
 		this.createdAt = createdAt;
 	}
 	
-    @JsonSerialize(using=CustomJsonInstantSerializer.class)
+	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
 	public Instant getModifiedAt() {
 		return modifiedAt;
 	}
@@ -127,7 +133,7 @@ public class Export {
 		this.modifiedAt = updatedAt;
 	}
 
-	public boolean account(String accountIdentifier) {
+	public boolean account(UUID accountIdentifier) {
 		return this.account != null && this.account.getIdentifier().equals(accountIdentifier);
 	}
 	
@@ -136,7 +142,7 @@ public class Export {
 	}
 
 	public String getURL() {
-		URI path = UriBuilder.fromPath(this.account.getIdentifier())
+		URI path = UriBuilder.fromPath(this.account.getIdentifier().toString())
 				.path(this.identifier)
 				.path(String.valueOf(this.version))
 				.path(this.title)

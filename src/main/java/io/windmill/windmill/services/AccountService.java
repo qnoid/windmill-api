@@ -3,6 +3,7 @@ package io.windmill.windmill.services;
 import static io.windmill.windmill.persistence.QueryConfiguration.identitifier;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -15,16 +16,15 @@ import com.google.common.base.Preconditions;
 
 import io.windmill.windmill.persistence.Account;
 import io.windmill.windmill.persistence.Device;
-import io.windmill.windmill.persistence.Endpoint;
 import io.windmill.windmill.persistence.Export;
 import io.windmill.windmill.persistence.Provider;
-import io.windmill.windmill.persistence.QueryConfiguration;
 import io.windmill.windmill.persistence.WindmillEntityManager;
+import io.windmill.windmill.persistence.sns.Endpoint;
 
 @ApplicationScoped
 public class AccountService {
 
-    private static final Logger LOGGER = Logger.getLogger(AccountService.class);
+	private static final Logger LOGGER = Logger.getLogger(AccountService.class);
 
     @Inject
     private WindmillEntityManager entityManager;
@@ -46,30 +46,20 @@ public class AccountService {
     	entityManager = WindmillEntityManager.unwrapEJBExceptions(this.entityManager);        
     }
 
-	public <T> T findOrProvide(String name, QueryConfiguration<T> queryConfiguration, Provider<T> inCaseOfNoResultException) {
-		try {
-			return this.entityManager.getSingleResult(name, queryConfiguration);
-		}
-		catch (NoResultException e) {
-			LOGGER.debug(String.format("NoResultException: %s", e.getMessage()));            			
-		    return inCaseOfNoResultException.get();
-		}
-    }
-	
-	private Account get(String account_identifier) {
+	private Account get(UUID account_identifier) {
 		return this.entityManager.getSingleResult("account.find_by_identifier", identitifier(account_identifier));
 	}
     
-	public Export updateOrCreate(String account_identifier, String export_identifier, String export_title,
+	public Export updateOrCreate(UUID account_identifier, String export_identifier, String export_title,
 			Double export_version) throws IllegalArgumentException {
 
-		Export export = this.findOrProvide("export.find_by_identifier", identitifier(export_identifier), () -> new Export(export_identifier, export_version, export_title) );
+		Export export = this.entityManager.findOrProvide("export.find_by_identifier", identitifier(export_identifier), () -> new Export(export_identifier, export_version, export_title) );
 		
 		Preconditions.checkArgument(export.account == null || export.account(account_identifier), "io.windmill.api: error: The bundle identifier is already used by another account.\n");
 
 		export.setModifiedAt(Instant.now());
 		
-		Account account = this.findOrProvide("account.find_by_identifier", identitifier(account_identifier), new Provider<Account>(){
+		Account account = this.entityManager.findOrProvide("account.find_by_identifier", identitifier(account_identifier), new Provider<Account>(){
 
 			@Override
 			public Account get() {
@@ -89,7 +79,7 @@ public class AccountService {
 		return export;
 	}
 	
-	public Device registerDevice(String account_identifier, String token) {
+	public Device registerDevice(UUID account_identifier, String token) {
 		
 		Account account;
 		
@@ -100,14 +90,12 @@ public class AccountService {
 			throw new IllegalArgumentException(message);
     	}
     	
-		Device device = this.findOrProvide("device.find_by_token", query -> query.setParameter("token", token), new Provider<Device>() {
+		Device device = this.entityManager.findOrProvide("device.find_by_token", query -> query.setParameter("token", token), new Provider<Device>() {
 		
 			@Override
 			public Device get() {
-				Device device = new Device(token, account);				
-				
-				entityManager.persist(device);
-				
+				Device device = new Device(token, account);								
+				entityManager.persist(device);				
 				return device;
 			}
 		});
@@ -115,12 +103,18 @@ public class AccountService {
 		String endpointArn = notificationService.createPlatformEndpoint(token).getEndpointArn();		
 		notificationService.enable(endpointArn);		
 
-		Endpoint endpoint = this.findOrProvide("endpoint.find_by_device_token", query -> query.setParameter("device_token", token), () -> new Endpoint(endpointArn, device));
+		Endpoint endpoint = this.entityManager.findOrProvide("endpoint.find_by_device_token", query -> query.setParameter("device_token", token), new Provider<Endpoint>() {
+		
+			public Endpoint get() {
+				Endpoint endpoint = new Endpoint(endpointArn, device);				
+				entityManager.persist(endpoint);				
+				return endpoint;
+			}			
+		});
+		
 		endpoint.getDevice().setModifiedAt(Instant.now());
 		endpoint.setArn(endpointArn);
-		
-		this.entityManager.merge(endpoint);
-		
+				
 		LOGGER.debugv("Succesfully registered device with token '%s' for account '%s' with arn '%s'", token, account_identifier, endpointArn);
 	
 		return device;

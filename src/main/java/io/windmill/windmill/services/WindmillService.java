@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -22,9 +23,9 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.sns.model.EndpointDisabledException;
 
 import io.windmill.windmill.common.Manifest;
-import io.windmill.windmill.persistence.Endpoint;
 import io.windmill.windmill.persistence.Export;
 import io.windmill.windmill.persistence.WindmillEntityManager;
+import io.windmill.windmill.persistence.sns.Endpoint;
 import io.windmill.windmill.services.Notification.Messages;
 import io.windmill.windmill.web.common.UriBuilders;
 
@@ -50,7 +51,7 @@ public class WindmillService {
     	entityManager = WindmillEntityManager.unwrapEJBExceptions(this.entityManager);        
     }
 
-	public List<Export> get(String account_identifier) {
+	public List<Export> get(UUID account_identifier) {
 		
 		List<Export> exports = entityManager.getResultList("export.with_account_identifier", query -> query.setParameter("account_identifier", account_identifier));
       
@@ -71,13 +72,13 @@ public class WindmillService {
 	 * @throws UriBuilderException 
 	 * @throws IllegalArgumentException 
 	 */
-	public URI updateOrCreate(String account_identifier, Manifest manifest, File ipa, ByteArrayOutputStream plist) throws FileNotFoundException, IllegalArgumentException, URISyntaxException 
+	public URI updateOrCreate(UUID account_identifier, Manifest manifest, File ipa, ByteArrayOutputStream plist) throws FileNotFoundException, IllegalArgumentException, URISyntaxException 
 	{
 		Export export = accountService.updateOrCreate(account_identifier, manifest.getIdentifier(), manifest.getTitle(), manifest.getVersion());
 	
 	    LOGGER.debug(String.format("Created or updated windmill for %s with metadata.bundle-identifier '%s', metadata.bundle-version '%s', metadata.title '%s'", account_identifier, export.getIdentifier(), export.getVersion(), export.getTitle()));
 
-		URI path = UriBuilder.fromPath(account_identifier)
+		URI path = UriBuilder.fromPath(account_identifier.toString())
 				.path(manifest.getIdentifier())
 				.path(String.valueOf(manifest.getVersion()))
 				.path(manifest.getTitle())

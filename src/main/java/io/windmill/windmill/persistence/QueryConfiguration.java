@@ -8,7 +8,7 @@ public interface QueryConfiguration<T> {
 		
 	public @NotNull Query apply(Query query);
 
-	public static <T> QueryConfiguration<T> identitifier(String identifier) {
+	public static <T, S> QueryConfiguration<T> identitifier(S identifier) {
 		return query -> query.setParameter("identifier", identifier);			
 	}
 }

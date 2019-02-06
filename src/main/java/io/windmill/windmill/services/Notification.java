@@ -1,5 +1,7 @@
 package io.windmill.windmill.services;
 
+import java.util.Optional;
+
 import javax.json.Json;
 import javax.json.JsonObject;
 
@@ -27,15 +29,21 @@ public class Notification {
 		APNS,
 		APNS_SANDBOX;
 
-		private static final boolean DEBUG = false;
+		private static final boolean IS_PRODUCTION = isProduction();
+				
+		private static boolean isProduction() {
+			String environment = System.getenv("WINDMILL_ENVIRONMENT");
+			
+			return Optional.ofNullable(environment).isPresent();		
+		}
 		
 		public static Platform getInstance() {
 			
-			if (DEBUG) {
-				return APNS_SANDBOX;
+			if (IS_PRODUCTION) {
+				return APNS;
 			}
 			else {
-				return APNS;
+				return APNS_SANDBOX;
 			}			
 		}
 		

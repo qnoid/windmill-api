@@ -3,6 +3,7 @@ package io.windmill.windmill.persistence;
 
 import java.time.Instant;
 
+import javax.json.bind.annotation.JsonbTypeAdapter;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -13,9 +14,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import io.windmill.windmill.web.CustomJsonInstantSerializer;
+import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 
 @Entity
 @NamedQueries({
@@ -79,7 +78,7 @@ public class Device {
 		this.token = token;
 	}
 	
-	@JsonSerialize(using=CustomJsonInstantSerializer.class)
+	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
 	public Instant getCreatedAt() {
 		return createdAt;
 	}
@@ -88,7 +87,7 @@ public class Device {
 		this.createdAt = createdAt;
 	}
 
-	@JsonSerialize(using=CustomJsonInstantSerializer.class)
+	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
 	public Instant getModifiedAt() {
 		return modifiedAt;
 	}

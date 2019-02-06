@@ -4,7 +4,10 @@ package io.windmill.windmill.persistence;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
+import javax.json.bind.annotation.JsonbTypeAdapter;
+import javax.json.bind.annotation.JsonbTypeSerializer;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -16,9 +19,8 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import io.windmill.windmill.web.CustomJsonInstantSerializer;
+import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
+import io.windmill.windmill.web.CustomJsonUUIDSerializer;
 
 @Entity
 @NamedQueries({
@@ -32,7 +34,7 @@ public class Account {
 
     @Column(unique=true)
     @NotNull
-    private String identifier;
+    private UUID identifier;
 
     @Column(name="created_at")
     @NotNull
@@ -53,24 +55,25 @@ public class Account {
      */
     public Account()
     {
-      // TODO Auto-generated constructor stub
+    	this.identifier = UUID.randomUUID();
     }
         
-	public Account(String identifier) {
+	public Account(UUID identifier) {
 		this.identifier = identifier;
 	    this.createdAt = this.modifiedAt = Instant.now();		
 		this.exports = new HashSet<Export>();
 	}
 
-	public String getIdentifier() {
+	@JsonbTypeSerializer(CustomJsonUUIDSerializer.class)
+	public UUID getIdentifier() {
 		return identifier;
 	}
 
-	public void setIdentifier(String identifier) {
+	public void setIdentifier(UUID identifier) {
 		this.identifier = identifier;
 	}
 
-	@JsonSerialize(using=CustomJsonInstantSerializer.class)
+	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
 	public Instant getCreatedAt() {
 		return createdAt;
 	}
@@ -79,7 +82,7 @@ public class Account {
 		this.createdAt = createdAt;
 	}
 
-	@JsonSerialize(using=CustomJsonInstantSerializer.class)
+	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
 	public Instant getModifiedAt() {
 		return modifiedAt;
 	}

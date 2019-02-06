@@ -21,7 +21,16 @@ public interface WindmillEntityManager {
 
 	<T> List<T> getResultList(String name, QueryConfiguration<List<T>> queryConfiguration) throws EJBException;
 
-
+    default <T> T findOrProvide(String name, QueryConfiguration<T> queryConfiguration, Provider<T> inCaseOfNoResultException) {
+        try {
+                return this.getSingleResult(name, queryConfiguration);
+        }
+        catch (NoResultException e) {
+                LOGGER.debug(String.format("NoResultException: %s", e.getMessage()));
+            return inCaseOfNoResultException.get();
+        }
+    }
+        
 	public static WindmillEntityManager unwrapEJBExceptions(final WindmillEntityManager wem) {
 		return new WindmillEntityManager() {
 					    

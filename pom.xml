@@ -31,16 +31,15 @@
         <jdk.version>1.8</jdk.version>
 
         <!-- libs version -->
-        <version.wildfly>10.0.0.Final</version.wildfly>
+        <version.wildfly>14.0.0.Final</version.wildfly>
         <lib.version.inject>1.0</lib.version.inject>
-        <javaee.api.version>7.0</javaee.api.version>
-        <aws.java.sdk.version>1.11.232</aws.java.sdk.version>
+        <javaee.api.version>8.0</javaee.api.version>
+        <aws.java.sdk.version>1.11.491</aws.java.sdk.version>
         <org.apache.httpcomponents.version>4.5.2</org.apache.httpcomponents.version>
         <apache.commons.io.version>2.4</apache.commons.io.version>
         <apache.commons.configuration.version>2.0</apache.commons.configuration.version>
         <jersey.multipart.version>1.18.1</jersey.multipart.version>
         <mustache.compiler.version>0.8.15</mustache.compiler.version>
-        <com.fasterxml.jackson.core.version>2.7.4</com.fasterxml.jackson.core.version>
         <postgres.driver.version>42.2.1</postgres.driver.version>
 
 		<!--  test scoped version -->
@@ -201,7 +200,7 @@
         <dependencies>
             <dependency>
                 <groupId>org.wildfly.bom</groupId>
-                <artifactId>wildfly-javaee7</artifactId>
+                <artifactId>wildfly-javaee8</artifactId>
                 <scope>import</scope>
                 <type>pom</type>
                 <version>${version.wildfly}</version>
@@ -253,24 +252,6 @@
             <artifactId>commons-io</artifactId>
             <version>${apache.commons.io.version}</version>
         </dependency>
-
-		<dependency>
-		    <groupId>com.fasterxml.jackson.core</groupId>
-		    <artifactId>jackson-core</artifactId>
-		    <version>${com.fasterxml.jackson.core.version}</version>
-		</dependency>
-
-		<dependency>
-		    <groupId>com.fasterxml.jackson.core</groupId>
-		    <artifactId>jackson-databind</artifactId>
-		    <version>${com.fasterxml.jackson.core.version}</version>
-		</dependency>
-
-		<dependency>
-		    <groupId>com.fasterxml.jackson.core</groupId>
-		    <artifactId>jackson-annotations</artifactId>
-		    <version>${com.fasterxml.jackson.core.version}</version>
-		</dependency>
 
         <dependency>
             <groupId>com.github.spullara.mustache.java</groupId>

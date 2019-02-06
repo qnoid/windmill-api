@@ -9,17 +9,18 @@
 	* Under the same account, skip creating a new entry in the database. (The contents of the `ipa` and `plist` should still be posted to the `AWS` bucket).
 	* Under a different account, treat it as an error.
 
-##### The API must support getting all the "windmill"s of a "user" #####
+##### The API must support getting all the "exports"s of a "user" #####
 
-The API at `GET /user/{user}/exports` should return a JSON of every export, like the following : 
+The API at `GET /account/{account}/exports` should return a JSON of every export, like the following : 
 
 ```javascript
 [{
-    "id": 1,
+    "id": {an ordinal id},
+    "identifier": "{export_identifier, unique per account_identifier}",
     "title": "{export_title}",
     "version": "{export_version}",
-    "createdAt" "{timestamp}",
-    "modifiedAt" "{timestamp}",
-    "URL": "itms-services://?action=download-manifest&url=https://ota.windmill.io/{user_identifier}/{export_identifier}/{export_version}/{export_title}.plist"
+    "createdAt" {timestamp in epoch seconds},
+    "modifiedAt" {timestamp in epoch seconds},
+    "url": "itms-services://?action=download-manifest&url=https://ota.windmill.io/{account_identifier}/{export_identifier}/{export_version}/{export_title}.plist"
 }]
 ```

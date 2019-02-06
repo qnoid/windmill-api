@@ -2,7 +2,6 @@ package io.windmill.windmill.services;
 
 import org.junit.Test;
 
-import io.windmill.windmill.services.Notification;
 import io.windmill.windmill.services.Notification.Messages;
 import io.windmill.windmill.services.Notification.Platform;
 import junit.framework.Assert;

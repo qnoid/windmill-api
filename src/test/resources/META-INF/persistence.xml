@@ -9,7 +9,11 @@
         <class>io.windmill.windmill.persistence.Account</class>
         <class>io.windmill.windmill.persistence.Export</class> 
         <class>io.windmill.windmill.persistence.Device</class>                              
-        <class>io.windmill.windmill.persistence.Endpoint</class>                                                                   
+        <class>io.windmill.windmill.persistence.sns.Endpoint</class>
+        <class>io.windmill.windmill.persistence.Subscription</class>                                                                   
+        <class>io.windmill.windmill.persistence.apple.AppStoreTransaction</class>
+        <class>io.windmill.windmill.persistence.web.AuthorizationToken</class>
+        <class>io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken</class>
 	    <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
             <property name="eclipselink.logging.level" value="FINE" />
