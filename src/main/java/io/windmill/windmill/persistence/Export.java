@@ -58,7 +58,6 @@ public class Export {
     @JsonbTransient
     public Account account;
     
-    @SuppressWarnings("unused")
     @Transient
     @JsonbProperty("url")
 	private String URL;

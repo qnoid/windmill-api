@@ -5,7 +5,7 @@
              http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
              version="2.1">
     <persistence-unit name="windmill-pu" transaction-type="RESOURCE_LOCAL">
-        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <class>io.windmill.windmill.persistence.Account</class>
         <class>io.windmill.windmill.persistence.Export</class> 
         <class>io.windmill.windmill.persistence.Device</class>                              
@@ -16,15 +16,13 @@
         <class>io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken</class>
 	    <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
-            <property name="eclipselink.logging.level" value="FINE" />
-          	<property name="eclipselink.target-database" value="Derby" />        
- 			<property name="javax.persistence.jdbc.driver" value="org.apache.derby.jdbc.EmbeddedDriver"/>        
- 			<property name="javax.persistence.jdbc.url" value="jdbc:derby:memory:testDB;create=true"/>
-            <property name="javax.persistence.jdbc.user" value="test" />
-            <property name="javax.persistence.jdbc.password" value="test" /> 			
+ 			<property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>        
+ 			<property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test"/>
             
-			<property name="eclipselink.ddl-generation" value="create-tables" />
-  			<property name="eclipselink.ddl-generation.output-mode" value="database" />
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
+            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+            <property name="hibernate.format_sql" value="false"/>
+            <property name="hibernate.show_sql" value="true"/>
         </properties>
     </persistence-unit>
 </persistence>

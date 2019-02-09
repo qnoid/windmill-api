@@ -1,8 +1,8 @@
 package io.windmill.windmill.services;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.UUID;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.Hashtable;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -14,13 +14,11 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import io.windmill.windmill.persistence.Account;
-import io.windmill.windmill.persistence.Device;
 import io.windmill.windmill.persistence.StatelessEntityManager;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 
 @Ignore
-public class AccountServiceTest {
+public class SubscriptionServiceTest {
 
 	private static EntityManagerFactory emf;
     private static EntityManager em;
@@ -33,10 +31,6 @@ public class AccountServiceTest {
     
 	@Before
 	public void before() {
-		String account_identifier = "14810686-4690-4900-ada5-8b0b7338aa39";
-		em.getTransaction().begin();
-		em.persist(new Account(UUID.fromString(account_identifier)));
-		em.flush();
 	}
 	
 	@After
@@ -45,15 +39,13 @@ public class AccountServiceTest {
 	}
 	
 	@Test
-	public void testGivenAccountAssertRegisterDeviceSuccess() {
-
+	public void testGivenUpdatedReceiptForExistingSubscriptionAssertExpiryDateUpdate() {
+		
 		WindmillEntityManager entityManager = new StatelessEntityManager(em);
-		NotificationService notificationService = new NotificationService();
-		AccountService accountService = new AccountService(entityManager, notificationService);
+		SubscriptionService subscriptionService = new SubscriptionService(entityManager, null);
 		
-		String token = "651743ecad5704a088ff54a0234f37a013bd17b3401d1612cb8ded8af1fa2225";
-		Device device = accountService.registerDevice(UUID.fromString("14810686-4690-4900-ada5-8b0b7338aa39"), token);
+		Instant expiresAt = Instant.from(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss VV").parse("2020-01-31 21:43:24 Etc/GMT"));
+		subscriptionService.updateOrCreateSubscription("1000000497931993", "", expiresAt, new Hashtable<>());
 		
-		assertEquals(token, device.getToken());
 	}
 }
