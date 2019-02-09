@@ -65,8 +65,11 @@ public class NotificationService {
 
 	public boolean notify(String message, String endpointArn) throws EndpointDisabledException {
 		
+		String notification = Notification.Messages.on(platform, message);
 		PublishRequest publishRequest = request(
-				endpointArn, Notification.Messages.on(platform, message));
+				endpointArn, notification);
+		
+		LOGGER.debug(notification);
 		
 		try {
 			PublishResult publishResult = sns.publish(publishRequest);
@@ -78,7 +81,7 @@ public class NotificationService {
 			throw e;
 		}
 		catch (RuntimeException e) {
-			LOGGER.error(e.getMessage(), e.getCause());
+			LOGGER.error(e.getMessage(), e);
 		}
 		
 		return false;

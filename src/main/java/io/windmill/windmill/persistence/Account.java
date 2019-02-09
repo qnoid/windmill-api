@@ -19,8 +19,8 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 
-import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 import io.windmill.windmill.web.CustomJsonUUIDSerializer;
+import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 
 @Entity
 @NamedQueries({
@@ -56,12 +56,16 @@ public class Account {
     public Account()
     {
     	this.identifier = UUID.randomUUID();
+	    this.createdAt = this.modifiedAt = Instant.now();		
+		this.exports = new HashSet<Export>();
+		this.devices = new HashSet<Device>();
     }
         
 	public Account(UUID identifier) {
 		this.identifier = identifier;
 	    this.createdAt = this.modifiedAt = Instant.now();		
 		this.exports = new HashSet<Export>();
+		this.devices = new HashSet<Device>();
 	}
 
 	@JsonbTypeSerializer(CustomJsonUUIDSerializer.class)

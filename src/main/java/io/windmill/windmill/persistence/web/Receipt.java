@@ -1,5 +1,4 @@
-
-package io.windmill.windmill.persistence;
+package io.windmill.windmill.persistence.web;
 
 import java.time.Instant;
 
@@ -9,19 +8,12 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.validation.constraints.NotNull;
 
 import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 
 @Entity
-@NamedQueries({
-		@NamedQuery(name = "device.list", query = "SELECT d FROM Device d"),
-        @NamedQuery(name = "device.with_account_identifier", query = "SELECT d FROM Device d WHERE d.account.identifier = :account_identifier"),
-		@NamedQuery(name = "device.find_by_token", query = "SELECT d FROM Device d WHERE d.token = :token")})
-public class Device {
+public class Receipt {
 	
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +21,7 @@ public class Device {
 
     @Column(unique=true)
     @NotNull
-    private String token;
+    private String data;
 
     @Column(name="created_at")
     @NotNull
@@ -39,30 +31,23 @@ public class Device {
     @NotNull
     private Instant modifiedAt;
 
-    @ManyToOne
-    @NotNull
-    Account account;
-    
     /**
      * 
      */
-    public Device()
+    public Receipt()
     {
         this.createdAt = this.modifiedAt = Instant.now();
     }
     
-    /**
-     * 
-     */
-    public Device(String token, Account account)
-    {
-      this.token = token;
-      this.account = account;
-      this.createdAt = this.modifiedAt = Instant.now();
-    }
-        
-    
-    public Long getId() {
+	public Receipt(String data) {
+		super();
+		this.data = data;
+        this.createdAt = this.modifiedAt = Instant.now();		
+	}
+
+
+
+	public Long getId() {
 		return id;
 	}
 
@@ -70,12 +55,12 @@ public class Device {
 		this.id = id;
 	}
 	
-    public String getToken() {
-		return token;
+    public String getData() {
+		return data;
 	}
 
-	public void setToken(String token) {
-		this.token = token;
+	public void setData(String data) {
+		this.data = data;
 	}
 	
 	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
@@ -92,15 +77,15 @@ public class Device {
 		return modifiedAt;
 	}
 
-	public void setModifiedAt(Instant modifiedAt) {
-		this.modifiedAt = modifiedAt;
+	public void setModifiedAt(Instant updatedAt) {
+		this.modifiedAt = updatedAt;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((token == null) ? 0 : token.hashCode());
+		result = prime * result + ((data == null) ? 0 : data.hashCode());
 		return result;
 	}
 
@@ -109,16 +94,16 @@ public class Device {
 		if (this == that)
 			return true;
 		
-		if (!(that instanceof Device))
+		if (!(that instanceof Receipt))
 			return false;
 		
-		Device device = (Device) that;
+		Receipt receipt = (Receipt) that;
 		
-		return this.token.equals(device.token);
+		return this.data.equals(receipt.data);
 	}
 	
 	@Override
 	public String toString() {
-		return String.format("{token:%s}", this.token);
+		return String.format("{data:%s}", this.data);
 	}
 }

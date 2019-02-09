@@ -29,4 +29,12 @@ public class NotificationMessagesTest {
 		
 		Assert.assertEquals("{\"APNS_SANDBOX\":\"{\\\"aps\\\":{\\\"alert\\\":{\\\"title\\\":\\\"New build\\\",\\\"body\\\":\\\"foo 1.0 (455f6a1) is now available to install.\\\"}}}\"}", actual);
 	}
+	
+	@Test
+	public void testPlatformInstance() {
+		Platform actual = Platform.getInstance();
+		
+		Assert.assertEquals(Platform.APNS_SANDBOX, actual);
+	}
+
 }

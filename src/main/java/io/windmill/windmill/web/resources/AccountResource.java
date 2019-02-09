@@ -76,7 +76,7 @@ public class AccountResource {
     @POST
     @Path("/{account}/export")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Transactional
     public Response create(@PathParam("account") final UUID account_identifier, final MultipartFormDataInput input) {
 
@@ -109,9 +109,9 @@ public class AccountResource {
 			return Response.seeOther(itms).build();			
 		} catch (ConfigurationException e) {
 			LOGGER.warn("Unabled to parse 'plist' passed as input", e.getCause());
-			return Response.status(Status.BAD_REQUEST).entity("The 'plist' parameter should be a 'manifest.xml' as referenced at https://developer.apple.com/library/content/documentation/IDEs/Conceptual/AppDistributionGuide/TestingYouriOSApp/TestingYouriOSApp.html").build();
+			return Response.status(Status.BAD_REQUEST).entity("The 'plist' parameter should be a 'manifest.xml' as referenced at https://developer.apple.com/library/content/documentation/IDEs/Conceptual/AppDistributionGuide/TestingYouriOSApp/TestingYouriOSApp.html").type(MediaType.TEXT_PLAIN_TYPE).build();
 		} catch (IllegalArgumentException e) {
-			return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();
+			return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
 		} catch (FileNotFoundException | URISyntaxException e) {
 			LOGGER.error(e.getMessage(), e.getCause());
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -127,12 +127,12 @@ public class AccountResource {
      */
     @POST
     @Path("/{account}/device/register")
-    @Produces(MediaType.APPLICATION_JSON)    
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})  
     @Transactional
     public Response register(@PathParam("account") final UUID account_identifier, @QueryParam("token") String token) {
 
     	if (token == null) {
-    		return Response.status(Status.BAD_REQUEST).entity(String.format("Mandatory parameter 'token' is missing.")).build();
+    		return Response.status(Status.BAD_REQUEST).entity(String.format("Mandatory parameter 'token' is missing.")).type(MediaType.TEXT_PLAIN_TYPE).build();
     	}
 
     	try {
@@ -140,7 +140,7 @@ public class AccountResource {
 
     		return Response.ok(device).build();
     	} catch (IllegalArgumentException e){
-			return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();    		
+			return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();    		
     	} catch (InternalErrorException e) {
 			LOGGER.error(e.getMessage(), e.getCause());
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();    		

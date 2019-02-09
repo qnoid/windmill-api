@@ -1,5 +1,8 @@
 package io.windmill.windmill.persistence.sns;
 
+import java.time.Instant;
+
+import javax.json.bind.annotation.JsonbTypeAdapter;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -13,6 +16,7 @@ import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
 import io.windmill.windmill.persistence.Device;
+import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 
 @Entity
 @Table(schema="sns")
@@ -33,14 +37,23 @@ public class Endpoint {
     @NotNull
     Device device;
     
+    @Column(name="created_at")
+    @NotNull
+    private Instant createdAt;
+
+    @Column(name="modified_at")
+    @NotNull
+    private Instant modifiedAt;
+
     public Endpoint() {
-    	
+        this.createdAt = this.modifiedAt = Instant.now();    	
     }
     
     public Endpoint(String arn, Device device) {
 		super();
 		this.arn = arn;
 		this.device = device;
+		this.createdAt = this.modifiedAt = Instant.now();
 	}
 
 	public Long getId() {
@@ -67,6 +80,24 @@ public class Endpoint {
 		this.device = device;
 	}
 
+	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(Instant createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
+	public Instant getModifiedAt() {
+		return modifiedAt;
+	}
+
+	public void setModifiedAt(Instant modifiedAt) {
+		this.modifiedAt = modifiedAt;
+	}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;

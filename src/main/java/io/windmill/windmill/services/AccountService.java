@@ -112,8 +112,8 @@ public class AccountService {
 			}			
 		});
 		
-		endpoint.getDevice().setModifiedAt(Instant.now());
 		endpoint.setArn(endpointArn);
+		endpoint.setModifiedAt(Instant.now());
 				
 		LOGGER.debugv("Succesfully registered device with token '%s' for account '%s' with arn '%s'", token, account_identifier, endpointArn);
 	
