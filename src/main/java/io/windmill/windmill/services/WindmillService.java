@@ -67,7 +67,7 @@ public class WindmillService {
 	 * @param ipa
 	 * @param plist
 	 * @return a URI in the itms format, e.g. "itms-services://?action=download-manifest&url=https://ota.windmill.io/14810686-4690-4900-ADA5-8B0B7338AA39/io.windmill.windmill/1.0/windmill.plist"
-	 * @throws FileNotFoundException
+	 * @throws FileNotFoundException if the given ipa is not found
 	 * @throws URISyntaxException 
 	 * @throws UriBuilderException 
 	 * @throws IllegalArgumentException 
@@ -95,11 +95,10 @@ public class WindmillService {
 			storageService.upload(new ByteArrayInputStream(byteArray), String.format("%s.plist", path), plistMetadata);			
 		}
 		catch (AmazonClientException | InterruptedException amazonException) {
-			LOGGER.error("Unable to upload file, upload aws aborted.", amazonException);
 			throw new StorageServiceException(amazonException);
 		}
 		
-		 String notification = Messages.of("New build", String.format("%s %s is now available to install.", export.getTitle(), export.getVersion()));
+		String notification = Messages.of("New build", String.format("%s %s is now available to install.", export.getTitle(), export.getVersion()));
         
 		List<Endpoint> endpoints = entityManager.getResultList("endpoint.find_by_account_identifier", query -> query.setParameter("account_identifier", account_identifier)); 
 
@@ -113,7 +112,7 @@ public class WindmillService {
 				}
 			}
 			catch (EndpointDisabledException e) {
-				LOGGER.debug(String.format("Endpoint `%s` is reported as disabled by AmazonSNS.", endpoint.getArn()), e);
+				LOGGER.warn(String.format("Endpoint `%s` is reported as disabled by AmazonSNS.", endpoint.getArn()), e);
 			}
 		}
 		

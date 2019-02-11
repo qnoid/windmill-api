@@ -34,6 +34,7 @@ import io.windmill.windmill.common.Manifest;
 import io.windmill.windmill.persistence.Device;
 import io.windmill.windmill.persistence.Export;
 import io.windmill.windmill.services.AccountService;
+import io.windmill.windmill.services.StorageServiceException;
 import io.windmill.windmill.services.WindmillService;
 import io.windmill.windmill.web.common.FormDataMap;
 import io.windmill.windmill.web.common.UriBuilders;
@@ -112,7 +113,7 @@ public class AccountResource {
 			return Response.status(Status.BAD_REQUEST).entity("The 'plist' parameter should be a 'manifest.xml' as referenced at https://developer.apple.com/library/content/documentation/IDEs/Conceptual/AppDistributionGuide/TestingYouriOSApp/TestingYouriOSApp.html").type(MediaType.TEXT_PLAIN_TYPE).build();
 		} catch (IllegalArgumentException e) {
 			return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
-		} catch (FileNotFoundException | URISyntaxException e) {
+		} catch (StorageServiceException | FileNotFoundException | URISyntaxException e) {
 			LOGGER.error(e.getMessage(), e.getCause());
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
