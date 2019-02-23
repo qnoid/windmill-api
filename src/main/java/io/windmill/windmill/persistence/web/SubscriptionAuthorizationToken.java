@@ -38,7 +38,7 @@ public class SubscriptionAuthorizationToken {
     Subscription subscription;
 
 	public SubscriptionAuthorizationToken() {
-		// TODO Auto-generated constructor stub
+		this.authorizationToken = AuthorizationToken.create();
 	}
 	
 	public SubscriptionAuthorizationToken(Subscription subscription) {
