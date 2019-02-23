@@ -20,7 +20,8 @@ import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 
 @Entity
 @NamedQueries({
-    @NamedQuery(name = "subscription.find_by_transaction_identifier", query = "SELECT s FROM Subscription s WHERE s.transaction.identifier = :transaction_identifier")})
+    @NamedQuery(name = "subscription.find_by_identifier", query = "SELECT s FROM Subscription s WHERE s.transaction.identifier = :identifier"),
+    @NamedQuery(name = "subscription.belongs_to_account_identifier", query = "SELECT s FROM Subscription s WHERE s.account.identifier = :account_identifier AND s.transaction.identifier = :identifier")})
 public class Subscription {
 
 	public enum Metadata {		
@@ -46,7 +47,7 @@ public class Subscription {
     @OneToOne(mappedBy="subscription")
     @NotNull
     AppStoreTransaction transaction;
-
+    
     /**
      * 
      */
@@ -92,6 +93,10 @@ public class Subscription {
 	
 	public String getIdentifier() {
 		return transaction.getIdentifier();
+	}
+
+	public void setIdentifier(String identifier) {
+		transaction.setIdentifier(identifier);
 	}
 
 	public Instant getExpiresAt() {

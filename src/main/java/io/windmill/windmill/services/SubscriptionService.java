@@ -5,6 +5,7 @@ import static io.windmill.windmill.persistence.QueryConfiguration.identitifier;
 import java.time.Instant;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import javax.annotation.PostConstruct;
@@ -12,12 +13,15 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.persistence.Query;
+import javax.validation.constraints.NotNull;
 
 import org.jboss.logging.Logger;
 
 import io.windmill.windmill.apple.AppStoreConnect.Bundle;
 import io.windmill.windmill.apple.AppStoreConnect.Product;
 import io.windmill.windmill.persistence.Provider;
+import io.windmill.windmill.persistence.QueryConfiguration;
 import io.windmill.windmill.persistence.Subscription;
 import io.windmill.windmill.persistence.Subscription.Metadata;
 import io.windmill.windmill.persistence.WindmillEntityManager;
@@ -114,5 +118,20 @@ public class SubscriptionService {
 				}
 			}
 		});
+	}
+
+	public Subscription subscription(UUID account_identifier, String subscription_identifier) {
+		
+		Subscription subscription = this.entityManager.getSingleResult("subscription.belongs_to_account_identifier", new QueryConfiguration<Subscription>() {
+
+			@Override
+			public @NotNull Query apply(Query query) {
+				query.setParameter("identifier", subscription_identifier);
+				query.setParameter("account_identifier", account_identifier);				
+				return query;
+			}
+		});
+		
+		return subscription;
 	}
 }

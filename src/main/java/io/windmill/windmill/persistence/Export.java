@@ -67,7 +67,8 @@ public class Export {
      */
     public Export()
     {
-      // TODO Auto-generated constructor stub
+    	this.account = new Account();
+        this.createdAt = this.modifiedAt = Instant.now();
     }
     
     /**

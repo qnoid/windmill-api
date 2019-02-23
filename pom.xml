@@ -272,12 +272,6 @@
 		</dependency>   
 
 		<dependency>
-		    <groupId>org.hibernate</groupId>
-		    <artifactId>hibernate-core</artifactId>
-		    <version>${org.hibernate.hibernate-core}</version>
-		    <scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.glassfish</groupId>
 			<artifactId>javax.json</artifactId>
 		    <version>${org.glassfish.javax.json}</version>
