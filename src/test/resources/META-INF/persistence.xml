@@ -4,7 +4,7 @@
              xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
              http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
              version="2.1">
-    <persistence-unit name="windmill-pu" transaction-type="RESOURCE_LOCAL">
+    <persistence-unit name="windmill" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <class>io.windmill.windmill.persistence.Account</class>
         <class>io.windmill.windmill.persistence.Export</class> 
@@ -17,12 +17,11 @@
 	    <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
  			<property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>        
- 			<property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test"/>
+ 			<property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;INIT=RUNSCRIPT FROM 'classpath:init.sql'"/>
             
             <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
             <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
             <property name="hibernate.format_sql" value="false"/>
-            <property name="hibernate.show_sql" value="true"/>
         </properties>
     </persistence-unit>
 </persistence>

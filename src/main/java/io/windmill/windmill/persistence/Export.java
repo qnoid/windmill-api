@@ -4,7 +4,7 @@ package io.windmill.windmill.persistence;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
-import java.util.UUID;
+import java.util.Optional;
 
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbTransient;
@@ -50,7 +50,6 @@ public class Export {
     private Instant createdAt;
 
     @Column(name="modified_at")
-    @NotNull
     private Instant modifiedAt;
 
     @ManyToOne
@@ -68,7 +67,7 @@ public class Export {
     public Export()
     {
     	this.account = new Account();
-        this.createdAt = this.modifiedAt = Instant.now();
+        this.createdAt = Instant.now();
     }
     
     /**
@@ -79,7 +78,7 @@ public class Export {
       this.identifier = identifier;
       this.version = version;
       this.title = title;
-      this.createdAt = this.modifiedAt = Instant.now();
+      this.createdAt = Instant.now();
     }
         
     
@@ -129,12 +128,20 @@ public class Export {
 		return modifiedAt;
 	}
 
-	public void setModifiedAt(Instant updatedAt) {
-		this.modifiedAt = updatedAt;
+	public void setModifiedAt(Instant modifiedAt) {
+		this.modifiedAt = modifiedAt;
 	}
 
-	public boolean account(UUID accountIdentifier) {
-		return this.account != null && this.account.getIdentifier().equals(accountIdentifier);
+	public Account getAccount() {
+		return account;
+	}
+
+	public void setAccount(Account account) {
+		this.account = account;
+	}
+
+	public boolean hasAccount(Account that) {
+		return Optional.ofNullable(this.account).filter(account -> account.equals(that)).isPresent();
 	}
 	
 	public void setURL(String URL) {
@@ -159,7 +166,9 @@ public class Export {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((identifier == null) ? 0 : identifier.hashCode());
+		result = prime * result + ((this.identifier == null) ? 0 : this.identifier.hashCode());
+		result = prime * result + ((this.version == null) ? 0 : this.version.hashCode());
+		result = prime * result + ((this.title == null) ? 0 : this.title.hashCode());
 		return result;
 	}
 
@@ -173,7 +182,9 @@ public class Export {
 		
 		Export export = (Export) that;
 		
-		return this.identifier.equals(export.identifier);
+		return this.identifier.equals(export.identifier) && 
+				this.version.equals(export.version) && 
+				this.title.equals(export.title);
 	}
 	
 	@Override

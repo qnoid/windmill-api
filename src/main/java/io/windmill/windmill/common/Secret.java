@@ -8,21 +8,25 @@ import java.util.Optional;
 
 import org.jboss.resteasy.util.Hex;
 
-public class Secret {
+public class Secret<T> {
 
-	public static Secret create(){		
+	public static <T> Secret<T> create(){		
 		return create(16);
 	}
 	
-	public static Secret create(int length) {	
+	public static <T> Secret<T> create(int length) {	
 		SecureRandom random = new SecureRandom();
 		
 		byte bytes[] = new byte[length];
 	    random.nextBytes(bytes);
 	    
-		return new Secret(bytes);
+		return new Secret<T>(bytes);
 	}
 	
+	public static <T> Secret<T> of(byte[] value) {		
+		return new Secret<T>(value);
+	}
+
     private final byte[] bytes;
 
 	Secret(byte[] bytes) {

@@ -2,13 +2,11 @@ package io.windmill.windmill.common;
 
 import static io.windmill.windmill.common.Condition.doesnot;
 
-import io.windmill.windmill.persistence.Provider;
+import java.util.function.Supplier;
 
 public abstract interface Guard<E extends RuntimeException> {
 	
-	default public void apply(boolean condition, Provider<E> provider) {
-		if (doesnot(condition)){
-			throw provider.get();
-		}
+	default public void guard(boolean condition, Supplier<? extends E> orElseThrow) {
+		doesnot(condition, orElseThrow);
 	}
 }

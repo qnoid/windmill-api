@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.json.Json;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 
 import io.windmill.windmill.web.security.JWT.Header;
 import io.windmill.windmill.web.security.JWT.JWS;
@@ -68,7 +69,7 @@ public class Claim {
 	}
 
 	/**
-	 * Create a new JWT of {@link JWS} type with the given claims.
+	 * Create a new signed JWT of {@link JWS} type with the given claims.
 	 * 
 	 * The header of the JWT will be of the form
 
@@ -109,17 +110,19 @@ public class Claim {
 		
 		JsonObject header = Json.createObjectBuilder()
 				.add("alg", this.algorithm.canonical)
-				.add("typ", Header.Type.JWT.name)
+				.add("typ", Header.Type.JWT.name())
 				.build();
 
-		JsonObject payload = Json.createObjectBuilder()
-				.add("jti", claims.jti)
-				.add("sub", claims.sub)
-				.add("exp", claims.exp.getEpochSecond())
-				.add("typ", claims.typ)
-				.add("v", version)
-				.build();		
+		JsonObjectBuilder payloadBuilder = Json.createObjectBuilder();
 
+		Optional.ofNullable(claims.jti).ifPresent(jti -> payloadBuilder.add("jti", jti));		
+		Optional.ofNullable(claims.sub).ifPresent(sub -> payloadBuilder.add("sub", sub));
+		Optional.ofNullable(claims.exp).ifPresent(exp -> payloadBuilder.add("exp", exp.getEpochSecond()));
+		Optional.ofNullable(claims.typ).ifPresent(typ -> payloadBuilder.add("typ", typ.value));				
+		Optional.ofNullable(version).ifPresent(v -> payloadBuilder.add("v", v));				
+
+		JsonObject payload = payloadBuilder.build();
+		
 		try {
 			String encodedHeader = this.encoder.encodeToString(header.toString().getBytes("UTF-8"));
 			String encodedPayload = this.encoder.encodeToString(payload.toString().getBytes("UTF-8"));

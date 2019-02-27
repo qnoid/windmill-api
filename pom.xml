@@ -34,17 +34,17 @@
         <version.wildfly>14.0.0.Final</version.wildfly>
         <lib.version.inject>1.0</lib.version.inject>
         <javaee.api.version>8.0</javaee.api.version>
-        <aws.java.sdk.version>1.11.491</aws.java.sdk.version>
+        <aws.java.sdk.version>1.11.505</aws.java.sdk.version>
         <org.apache.httpcomponents.version>4.5.2</org.apache.httpcomponents.version>
         <apache.commons.io.version>2.4</apache.commons.io.version>
         <apache.commons.configuration.version>2.0</apache.commons.configuration.version>
         <jersey.multipart.version>1.18.1</jersey.multipart.version>
-        <mustache.compiler.version>0.8.15</mustache.compiler.version>
+        <mustache.compiler.version>0.9.6</mustache.compiler.version>
         <postgres.driver.version>42.2.1</postgres.driver.version>
 
 		<!--  test scoped version -->
 		<junit.junit.version>4.8.2</junit.junit.version>		
-		<com.h2database.h2>1.4.192</com.h2database.h2>
+		<com.h2database.h2>1.4.198</com.h2database.h2>
 		<org.hibernate.hibernate-core>5.3.6.Final</org.hibernate.hibernate-core>
 		<org.glassfish.javax.json>1.1.4</org.glassfish.javax.json>
 		
@@ -71,33 +71,10 @@
         <profile>
             <!-- profile for using postgres db-->
             <id>postgres</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <build>
                 <resources>
                     <resource>
                         <directory>src/main/resources/postgres</directory>
-                        <filtering>true</filtering>
-                        <includes>
-                            <include>**/*.xml</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
-        </profile>
-        <!-- *************************** H2 DB for Paris  **************************************************** -->
-
-        <profile>
-            <!-- profile for using h2 persistence xml on local wildfly -->
-            <id>h2</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources/h2</directory>
                         <filtering>true</filtering>
                         <includes>
                             <include>**/*.xml</include>
@@ -263,6 +240,13 @@
  			<version>${junit.junit.version}</version>
  			<scope>test</scope>
  		</dependency>
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${org.hibernate.hibernate-core}</version><!--$NO-MVN-MAN-VER$-->
+            <scope>test</scope>
+        </dependency>
 
 		<dependency>
 		  <groupId>com.h2database</groupId>

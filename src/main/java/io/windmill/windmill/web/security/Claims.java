@@ -4,26 +4,58 @@ import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Optional;
+import java.util.function.Function;
 
 import javax.json.Json;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 
+import io.windmill.windmill.persistence.Subscription;
+import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
 import io.windmill.windmill.web.resources.InvalidClaimException;
 import io.windmill.windmill.web.security.JWT.JWS;
 
-public class Claims<T extends JWT.Type> {
+public class Claims<T> {
+	
+	public static enum Type {
+		
+		SUBSCRIPTION("sub"),
+		ACCESS_TOKEN("at");
+		
+		public static Optional<Type> of(String value) {
+	        for (Type t : Type.values()) {
+	            if (t.value.equals(value)) {
+	                return Optional.of(t);
+	            }
+	        }
+	
+			return Optional.empty();
+		}
+		
+		final String value;
+
+		private Type(String value) {
+			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			return this.value;
+		}
+	}
 	
 	public String jti;
 	public String sub;
 	public Instant exp;
-	public String typ;
+	public Type typ;
+	public Long version;
 
 	public static <T extends JWT.Type> Claims<T> create() {
 		return new Claims<T>();
 	}
 
-	public static Claims<JWS> subscription(JWT<JWS> jwt) {
+	public static Claims<Subscription> subscription(JWT<JWS> jwt) {
 		
 		byte[] decodedPayload = Base64.getUrlDecoder().decode(jwt.payload);		
 		JsonObject payload = Json.createReader(new StringReader(new String(decodedPayload, Charset.forName("UTF-8")))).readObject();			
@@ -33,16 +65,42 @@ public class Claims<T extends JWT.Type> {
 			String jti = payload.getString("jti");		
 			String sub = payload.getString("sub");
 			JsonNumber exp = payload.getJsonNumber("exp");
-			String typ = payload.getString("typ");
-		
-			Claims<JWS> claims = new Claims<JWS>()
+			Type typ = Claims.Type.of(payload.getString("typ")).get();
+			Long version = payload.getJsonNumber("v").longValue();
+			
+			Claims<Subscription> claims = new Claims<Subscription>()
 					.jti(jti)
 					.sub(sub)
 					.exp(Instant.ofEpochSecond(exp.longValue()))
-					.typ(typ);
+					.typ(typ)
+					.version(version);			
 			
 			return claims;			
-		} catch (NullPointerException e) {
+		} catch (NullPointerException | IllegalArgumentException e) {
+			throw new InvalidClaimException("Claim is invalid.");
+		}
+	}
+	
+	public static Claims<SubscriptionAuthorizationToken> accessToken(JWT<JWS> jwt) throws InvalidClaimException {
+		
+		byte[] decodedPayload = Base64.getUrlDecoder().decode(jwt.payload);		
+		JsonObject payload = Json.createReader(new StringReader(new String(decodedPayload, Charset.forName("UTF-8")))).readObject();			
+		
+		try {
+			
+			String jti = payload.getString("jti");		
+			String sub = payload.getString("sub");
+			Type typ = Claims.Type.of(payload.getString("typ")).get();
+			Long version = payload.getJsonNumber("v").longValue();
+		
+			Claims<SubscriptionAuthorizationToken> claims = new Claims<SubscriptionAuthorizationToken>()
+					.jti(jti)
+					.sub(sub)
+					.typ(typ)
+					.version(version);
+			
+			return claims;			
+		} catch (NullPointerException | IllegalArgumentException e) {
 			throw new InvalidClaimException("Claim is invalid.");
 		}
 	}
@@ -65,8 +123,13 @@ public class Claims<T extends JWT.Type> {
 		return this;
 	}
 
-	public Claims<T> typ(String typ) {
-		this.typ= typ;
+	public Claims<T> version(Long version) {
+		this.version = version ;
+		return this;
+	}
+
+	public Claims<T> typ(Claims.Type typ) {
+		this.typ = typ;
 		return this;
 	}
 
@@ -74,7 +137,20 @@ public class Claims<T extends JWT.Type> {
 		return this.exp.isBefore(Instant.now());
 	}
 
-	public boolean hasTyp(String typ) {
+	public boolean isTyp(Type typ) {
 		return this.typ.equals(typ);
+	}
+
+	public <E> boolean isSub(E sub, Function<String, E> mapper) {
+		if (sub == null) {
+			return false;
+		}
+		
+		return sub.equals(Optional.ofNullable(this.sub).map(mapper).orElse(null));
+	}
+
+	@Override
+	public String toString() {
+		return String.format("jti:'%s'", this.jti); 
 	}
 }

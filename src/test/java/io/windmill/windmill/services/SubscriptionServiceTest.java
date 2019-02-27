@@ -11,13 +11,12 @@ import javax.persistence.Persistence;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import io.windmill.windmill.persistence.StatelessEntityManager;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 
-@Ignore
+
 public class SubscriptionServiceTest {
 
 	private static EntityManagerFactory emf;
@@ -25,12 +24,13 @@ public class SubscriptionServiceTest {
 
     @BeforeClass
     public static void beforeClass() {
-		emf = Persistence.createEntityManagerFactory("windmill-pu");
+		emf = Persistence.createEntityManagerFactory("windmill");
         em = emf.createEntityManager();		
 	}
     
 	@Before
 	public void before() {
+		em.getTransaction().begin();
 	}
 	
 	@After

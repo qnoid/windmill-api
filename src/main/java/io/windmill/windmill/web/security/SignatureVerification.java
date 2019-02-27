@@ -9,7 +9,7 @@ import io.windmill.windmill.common.Guard;
 import io.windmill.windmill.web.resources.InvalidSignatureException;
 import io.windmill.windmill.web.security.JWT.JWS;
 
-public interface SignatureVerification extends InvalidSignatureExceptionGuard, JWTVerification<JWS> {
+public interface SignatureVerification extends InvalidSignatureGuard, JWTVerification<JWS> {
 
 	/**
 	 * Creates a new signature verification with the given signature that a JWT must pass for its signature to be considered valid.
@@ -64,9 +64,9 @@ public interface SignatureVerification extends InvalidSignatureExceptionGuard, J
 	}
 }
 
-interface InvalidSignatureExceptionGuard extends Guard<InvalidSignatureException> {
+interface InvalidSignatureGuard extends Guard<InvalidSignatureException> {
 	
 	public default void guard(boolean condition) {
-		this.apply(condition, () -> new InvalidSignatureException("Claim has an invalid signature."));
+		this.guard(condition, () -> new InvalidSignatureException("Claim has an invalid signature."));
 	}
 }

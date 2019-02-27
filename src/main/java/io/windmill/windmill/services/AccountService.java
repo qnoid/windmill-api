@@ -12,8 +12,7 @@ import javax.persistence.NoResultException;
 
 import org.jboss.logging.Logger;
 
-import com.google.common.base.Preconditions;
-
+import io.windmill.windmill.common.Condition;
 import io.windmill.windmill.persistence.Account;
 import io.windmill.windmill.persistence.Device;
 import io.windmill.windmill.persistence.Export;
@@ -27,10 +26,10 @@ public class AccountService {
 	private static final Logger LOGGER = Logger.getLogger(AccountService.class);
 
     @Inject
-    private WindmillEntityManager entityManager;
+    WindmillEntityManager entityManager;
 
     @Inject
-	private NotificationService notificationService;
+	NotificationService notificationService;
         
     public AccountService() {
 		super();
@@ -45,51 +44,40 @@ public class AccountService {
     private void init() {
     	entityManager = WindmillEntityManager.unwrapEJBExceptions(this.entityManager);        
     }
-
-	private Account get(UUID account_identifier) {
-		return this.entityManager.getSingleResult("account.find_by_identifier", identitifier(account_identifier));
-	}
-    
-	public Export updateOrCreate(UUID account_identifier, String export_identifier, String export_title,
-			Double export_version) throws IllegalArgumentException {
-
-		Export export = this.entityManager.findOrProvide("export.find_by_identifier", identitifier(export_identifier), () -> new Export(export_identifier, export_version, export_title) );
-		
-		Preconditions.checkArgument(export.account == null || export.account(account_identifier), "io.windmill.api: error: The bundle identifier is already used by another account.\n");
-
-		export.setModifiedAt(Instant.now());
-		
-		Account account = this.entityManager.findOrProvide("account.find_by_identifier", identitifier(account_identifier), new Provider<Account>(){
-
-			@Override
-			public Account get() {
-				Account account = new Account(account_identifier);
-				entityManager.persist(account);
-				return account;
-			}			
-		});
-		account.setModifiedAt(Instant.now());
-		
-		LOGGER.debug(String.format("Found: %s", account.getIdentifier()));            
-		
-		account.add(export);
-		
-		this.entityManager.persist(account);
-		
-		return export;
-	}
 	
-	public Device registerDevice(UUID account_identifier, String token) {
+	public Account get(UUID account_identifier) throws NoAccountException {
 		
-		Account account;
+		try {
+			return this.entityManager.getSingleResult("account.find_by_identifier", identitifier(account_identifier));
+		} catch (NoResultException e){
+    		throw new NoAccountException("An account for the given identifier doesn't exist. You need an active subscription.", e);
+		}
+	}    
+
+	public Export updateOrCreate(Account account, String export_identifier, String export_title,
+			Double export_version) throws AccountServiceException, NoAccountException {
+
+		try {
+			Export export = this.entityManager.findOrProvide("export.find_by_identifier", 
+				identitifier(export_identifier), () -> new Export(export_identifier, export_version, export_title));
 		
-    	try {
-    		account = this.get(account_identifier);
-    	} catch (NoResultException e){
-    		String message = String.format("No account was found for identifier '%s'. This call requires an existing account to register a device for. Hint: POST \"/{account}/export\" creates an account.", account_identifier);    		
-			throw new IllegalArgumentException(message);
-    	}
-    	
+			Condition.doesnot(export.account == null || export.hasAccount(account), 
+					() -> new AccountServiceException("io.windmill.api: error: The bundle identifier is already used by another account."));
+
+			export.setModifiedAt(Instant.now());
+			
+			account.add(export);
+			account.setModifiedAt(Instant.now());		
+			this.entityManager.persist(export);
+			
+			return export;		
+		} catch (NoResultException e) {
+			throw new NoAccountException("An account for the given identifier doesn't exist. You need an active subscription.");
+		}		
+	}
+
+	public Device registerDevice(Account account, String token) {
+		
 		Device device = this.entityManager.findOrProvide("device.find_by_token", query -> query.setParameter("token", token), new Provider<Device>() {
 		
 			@Override
@@ -115,7 +103,7 @@ public class AccountService {
 		endpoint.setArn(endpointArn);
 		endpoint.setModifiedAt(Instant.now());
 				
-		LOGGER.debugv("Succesfully registered device with token '%s' for account '%s' with arn '%s'", token, account_identifier, endpointArn);
+		LOGGER.debugv("Succesfully registered device with token '%s' for account '%s' with arn '%s'", token, account.getIdentifier(), endpointArn);
 	
 		return device;
 	}

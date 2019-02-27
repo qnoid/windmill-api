@@ -9,7 +9,7 @@ import javax.ws.rs.ext.Provider;
 import org.jboss.logging.Logger;
 
 @Provider
-public class EJBExceptionMapper implements ExceptionMapper<javax.ejb.EJBException> {
+public class EJBExceptionMapper implements ExceptionMapper<EJBException> {
 
 	public static final Logger LOGGER = Logger.getLogger(EJBExceptionMapper.class);
 

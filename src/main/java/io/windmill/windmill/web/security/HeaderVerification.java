@@ -14,7 +14,7 @@ import io.windmill.windmill.common.Guard;
 import io.windmill.windmill.web.resources.InvalidClaimException;
 import io.windmill.windmill.web.security.JWT.Header;
 
-public interface HeaderVerification<T extends JWT.Type> extends InvalidClaimExceptionGuard, JWTVerification<T> {
+public interface HeaderVerification<T extends JWT.Type> extends InvalidClaimGuard, JWTVerification<T> {
 
 	public static <T extends JWT.Type> HeaderVerification<T> make(MacAlgorithm algorithm, Header.Type type) {
 		return new HeaderVerification<T>() {
@@ -89,9 +89,9 @@ public interface HeaderVerification<T extends JWT.Type> extends InvalidClaimExce
 	}
 }
 
-interface InvalidClaimExceptionGuard extends Guard<InvalidClaimException> {
+interface InvalidClaimGuard extends Guard<InvalidClaimException> {
 	
 	public default void guard(boolean condition) {
-		this.apply(condition, () -> new InvalidClaimException("Claim is invalid."));
+		this.guard(condition, () -> new InvalidClaimException("Claim is invalid."));
 	}
 }
