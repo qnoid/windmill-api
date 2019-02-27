@@ -8,9 +8,9 @@ import java.util.UUID;
 
 import javax.json.bind.annotation.JsonbTypeAdapter;
 import javax.json.bind.annotation.JsonbTypeSerializer;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -37,17 +37,15 @@ public class Account {
     private UUID identifier;
 
     @Column(name="created_at")
-    @NotNull
     private Instant createdAt;
 
     @Column(name="modified_at")
-    @NotNull
     private Instant modifiedAt;
     
-    @OneToMany(cascade = CascadeType.PERSIST, mappedBy="account")
+    @OneToMany(mappedBy="account", fetch=FetchType.LAZY)
     private Set<Export> exports;
 
-    @OneToMany(cascade = CascadeType.PERSIST, mappedBy="account")
+    @OneToMany(mappedBy="account", fetch=FetchType.LAZY)
     private Set<Device> devices;
     
     /**
@@ -56,14 +54,14 @@ public class Account {
     public Account()
     {
     	this.identifier = UUID.randomUUID();
-	    this.createdAt = this.modifiedAt = Instant.now();		
+	    this.createdAt = Instant.now();		
 		this.exports = new HashSet<Export>();
 		this.devices = new HashSet<Device>();
     }
         
 	public Account(UUID identifier) {
 		this.identifier = identifier;
-	    this.createdAt = this.modifiedAt = Instant.now();		
+	    this.createdAt = Instant.now();		
 		this.exports = new HashSet<Export>();
 		this.devices = new HashSet<Device>();
 	}
@@ -91,10 +89,26 @@ public class Account {
 		return modifiedAt;
 	}
 
-	public void setModifiedAt(Instant updatedAt) {
-		this.modifiedAt = updatedAt;
+	public void setModifiedAt(Instant modifiedAt) {
+		this.modifiedAt = modifiedAt;
 	}
-	
+		
+	public Set<Export> getExports() {
+		return exports;
+	}
+
+	public void setExports(Set<Export> exports) {
+		this.exports = exports;
+	}
+
+	public Set<Device> getDevices() {
+		return devices;
+	}
+
+	public void setDevices(Set<Device> devices) {
+		this.devices = devices;
+	}
+
 	public void add(Export export) {
 		export.account = this;		
 		this.exports.add(export);
@@ -104,5 +118,30 @@ public class Account {
 		device.account = this;		
 		this.devices.add(device);
 	}    
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((identifier == null) ? 0 : identifier.hashCode());
+		return result;
+	}
 
+	@Override
+	public boolean equals(Object that) {
+		if (this == that)
+			return true;
+		
+		if (!(that instanceof Account))
+			return false;
+		
+		Account account = (Account) that;
+		
+		return this.identifier.equals(account.identifier);
+	}
+
+	@Override
+	public String toString() {
+		return String.format("{identifier:%s}", this.identifier);
+	}
 }

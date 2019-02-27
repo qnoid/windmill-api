@@ -6,10 +6,14 @@ import java.util.UUID;
 import javax.json.bind.annotation.JsonbTypeAdapter;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.ConstraintMode;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -46,13 +50,17 @@ public class AppStoreTransaction {
     private Instant createdAt;
 
     @Column(name="modified_at")
-    @NotNull
     private Instant modifiedAt;
 
     @ManyToOne
     AppStoreTransaction parent;
     
-    @OneToOne(cascade = CascadeType.PERSIST)    
+    @OneToOne(cascade = CascadeType.PERSIST, fetch=FetchType.LAZY)   
+    /* This is only applicable in a test environment which auto generates the schema.
+     * For some reason Hibernate (5.4.1.Final) logs an error message when trying to create a foreign key. 
+     * The mvn test action completes succesfully, still the error detracts the value of the log.   
+     */    
+    @JoinColumn(foreignKey=@ForeignKey(ConstraintMode.NO_CONSTRAINT))
     @NotNull
     Subscription subscription;
 
@@ -66,7 +74,7 @@ public class AppStoreTransaction {
 		this.expiresAt = Instant.now();
 		this.subscription = new Subscription();
 		this.subscription.setTransaction(this);
-        this.createdAt = this.modifiedAt = Instant.now();		
+        this.createdAt = Instant.now();		
     }
     
     public AppStoreTransaction(String identifier, String receipt, Instant expiresAt, Subscription subscription) {
@@ -76,7 +84,7 @@ public class AppStoreTransaction {
 		this.expiresAt = expiresAt;
 		this.subscription = subscription;
 		this.subscription.setTransaction(this);
-        this.createdAt = this.modifiedAt = Instant.now();		
+        this.createdAt = Instant.now();		
 	}
 
 
@@ -128,8 +136,8 @@ public class AppStoreTransaction {
 		return modifiedAt;
 	}
 
-	public void setModifiedAt(Instant updatedAt) {
-		this.modifiedAt = updatedAt;
+	public void setModifiedAt(Instant modifiedAt) {
+		this.modifiedAt = modifiedAt;
 	}
 
 	public AppStoreTransaction getParent() {

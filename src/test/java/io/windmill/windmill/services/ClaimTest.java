@@ -34,7 +34,7 @@ public class ClaimTest {
 		Claim claim = Claim.create(this.key);
 		
 		String jti = "QVgKpHuGWABtq5V6P";
-		JWT<JWS> jwt = claim.jws(new Claims<JWS>().jti(jti).sub("1000000497931993").exp(Instant.parse("2019-01-28T14:54:41Z")).typ("sub")).get();
+		JWT<JWS> jwt = claim.jws(new Claims<JWS>().jti(jti).sub("1000000497931993").exp(Instant.parse("2019-01-28T14:54:41Z")).typ(Claims.Type.SUBSCRIPTION)).get();
 		
 		Assert.assertEquals("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", jwt.getHeader());
 		Assert.assertEquals("eyJqdGkiOiJRVmdLcEh1R1dBQnRxNVY2UCIsInN1YiI6IjEwMDAwMDA0OTc5MzE5OTMiLCJleHAiOjE1NDg2ODcyODEsInR5cCI6InN1YiIsInYiOjF9", jwt.getPayload());

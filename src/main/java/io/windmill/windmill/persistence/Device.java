@@ -6,6 +6,7 @@ import java.time.Instant;
 import javax.json.bind.annotation.JsonbTypeAdapter;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -35,11 +36,7 @@ public class Device {
     @NotNull
     private Instant createdAt;
 
-    @Column(name="modified_at")
-    @NotNull
-    private Instant modifiedAt;
-
-    @ManyToOne
+    @ManyToOne(fetch=FetchType.LAZY)
     @NotNull
     Account account;
     
@@ -48,7 +45,7 @@ public class Device {
      */
     public Device()
     {
-        this.createdAt = this.modifiedAt = Instant.now();
+        this.createdAt = Instant.now();
     }
     
     /**
@@ -58,7 +55,7 @@ public class Device {
     {
       this.token = token;
       this.account = account;
-      this.createdAt = this.modifiedAt = Instant.now();
+      this.createdAt = Instant.now();
     }
         
     
@@ -85,15 +82,6 @@ public class Device {
 
 	public void setCreatedAt(Instant createdAt) {
 		this.createdAt = createdAt;
-	}
-
-	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
-	public Instant getModifiedAt() {
-		return modifiedAt;
-	}
-
-	public void setModifiedAt(Instant modifiedAt) {
-		this.modifiedAt = modifiedAt;
 	}
 
 	@Override

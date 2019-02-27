@@ -9,10 +9,11 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.validation.constraints.NotNull;
 
@@ -20,6 +21,7 @@ import org.jboss.logging.Logger;
 
 import io.windmill.windmill.apple.AppStoreConnect.Bundle;
 import io.windmill.windmill.apple.AppStoreConnect.Product;
+import io.windmill.windmill.persistence.Extended;
 import io.windmill.windmill.persistence.Provider;
 import io.windmill.windmill.persistence.QueryConfiguration;
 import io.windmill.windmill.persistence.Subscription;
@@ -29,12 +31,12 @@ import io.windmill.windmill.persistence.apple.AppStoreTransaction;
 import io.windmill.windmill.persistence.web.Receipt;
 import io.windmill.windmill.services.AppStoreService.VerifyResponse;
 
-@ApplicationScoped
+@RequestScoped
 public class SubscriptionService {
 
 	public static final Logger LOGGER = Logger.getLogger(SubscriptionService.class);
 	
-    @Inject
+    @Inject @Extended
     private WindmillEntityManager entityManager;
 
     @Inject
@@ -120,18 +122,23 @@ public class SubscriptionService {
 		});
 	}
 
-	public Subscription subscription(UUID account_identifier, String subscription_identifier) {
+	public Subscription subscription(UUID account_identifier, String subscription_identifier) throws NoSubscriptionException {
 		
-		Subscription subscription = this.entityManager.getSingleResult("subscription.belongs_to_account_identifier", new QueryConfiguration<Subscription>() {
+		try {
+			
+			Subscription subscription = this.entityManager.getSingleResult("subscription.belongs_to_account_identifier", new QueryConfiguration<Subscription>() {
 
-			@Override
-			public @NotNull Query apply(Query query) {
-				query.setParameter("identifier", subscription_identifier);
-				query.setParameter("account_identifier", account_identifier);				
-				return query;
-			}
-		});
-		
-		return subscription;
+				@Override
+				public @NotNull Query apply(Query query) {
+					query.setParameter("identifier", subscription_identifier);
+					query.setParameter("account_identifier", account_identifier);				
+					return query;
+				}
+			});
+			
+			return subscription;
+		} catch (NoResultException e) {
+			throw new NoSubscriptionException("A subscription does not exist for the given account.");
+		}		
 	}
 }

@@ -2,6 +2,7 @@ package io.windmill.windmill.persistence.web;
 
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Base64.Encoder;
 import java.util.Optional;
 
 import javax.json.bind.annotation.JsonbTypeAdapter;
@@ -34,19 +35,18 @@ public class AuthorizationToken {
 	private String value;
 
     @Column(name="created_at")
-    @NotNull
     private Instant createdAt;
 
     transient private byte[] bytes;
     
 	AuthorizationToken() {
-		Secret secret = Secret.create();
+		Secret<AuthorizationToken> secret = Secret.create(16);		
 		this.bytes = secret.getBytes();
-		this.value = secret.encoded().get();		
+		this.value = secret.encoded().get();
 		this.createdAt = Instant.now();
 	}
 	
-	AuthorizationToken(Secret secret) {
+	AuthorizationToken(Secret<AuthorizationToken> secret) {
 		this.bytes = secret.getBytes();
 		this.value = secret.encoded().get();
 		this.createdAt = Instant.now();
@@ -79,6 +79,29 @@ public class AuthorizationToken {
 	
 	@Override
 	public String toString() {
-		return Optional.ofNullable(this.bytes).map(bytes -> Base64.getEncoder().encodeToString(bytes)).orElse(this.value);
+		Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+		
+		return Optional.ofNullable(this.bytes).map(bytes -> encoder.encodeToString(bytes)).orElse(this.value);
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((value == null) ? 0 : value.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object that) {
+		if (this == that)
+			return true;
+		
+		if (!(that instanceof AuthorizationToken))
+			return false;
+		
+		AuthorizationToken authorizationToken = (AuthorizationToken) that;
+		
+		return this.value.equals(authorizationToken.value);		
+	}	
 }

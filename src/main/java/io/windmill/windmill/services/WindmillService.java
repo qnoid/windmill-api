@@ -7,8 +7,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -23,6 +23,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.sns.model.EndpointDisabledException;
 
 import io.windmill.windmill.common.Manifest;
+import io.windmill.windmill.persistence.Account;
 import io.windmill.windmill.persistence.Export;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.persistence.sns.Endpoint;
@@ -44,25 +45,17 @@ public class WindmillService {
     StorageService storageService;
     
     @Inject
-    private WindmillEntityManager entityManager;
+    WindmillEntityManager entityManager;
 
     @PostConstruct
     private void init() {
     	entityManager = WindmillEntityManager.unwrapEJBExceptions(this.entityManager);        
     }
 
-	public List<Export> get(UUID account_identifier) {
-		
-		List<Export> exports = entityManager.getResultList("export.with_account_identifier", query -> query.setParameter("account_identifier", account_identifier));
-      
-		LOGGER.debug(String.format("Found: %s", exports.size()));
-	      
-	    return exports;
-	}
-
 	/**
 	 * 
-	 * @param account_identifier
+     * @precondition the account <b>must</b> exist  
+	 * @param account
 	 * @param manifest
 	 * @param ipa
 	 * @param plist
@@ -70,19 +63,19 @@ public class WindmillService {
 	 * @throws FileNotFoundException if the given ipa is not found
 	 * @throws URISyntaxException 
 	 * @throws UriBuilderException 
-	 * @throws IllegalArgumentException 
+	 * @throws AccountServiceException 
 	 */
-	public URI updateOrCreate(UUID account_identifier, Manifest manifest, File ipa, ByteArrayOutputStream plist) throws FileNotFoundException, IllegalArgumentException, URISyntaxException 
+	public URI updateOrCreate(Account account, Manifest manifest, File ipa, ByteArrayOutputStream plist) throws FileNotFoundException, AccountServiceException, NoAccountException, URISyntaxException 
 	{
-		Export export = accountService.updateOrCreate(account_identifier, manifest.getIdentifier(), manifest.getTitle(), manifest.getVersion());
+		Export export = this.accountService.updateOrCreate(account, manifest.getIdentifier(), manifest.getTitle(), manifest.getVersion());
 	
-	    LOGGER.debug(String.format("Created or updated windmill for %s with metadata.bundle-identifier '%s', metadata.bundle-version '%s', metadata.title '%s'", account_identifier, export.getIdentifier(), export.getVersion(), export.getTitle()));
+	    LOGGER.debug(String.format("Created or updated export for account '%s' with metadata.bundle-identifier '%s', metadata.bundle-version '%s', metadata.title '%s'", account, export.getIdentifier(), export.getVersion(), export.getTitle()));
 
-		URI path = UriBuilder.fromPath(account_identifier.toString())
+		URI path = UriBuilder.fromPath(account.getIdentifier().toString())
 				.path(manifest.getIdentifier())
 				.path(String.valueOf(manifest.getVersion()))
 				.path(manifest.getTitle())
-				.build();		
+				.build();
 		
 		try {
 			ObjectMetadata ipaMetadata = new ObjectMetadata();
@@ -100,7 +93,7 @@ public class WindmillService {
 		
 		String notification = Messages.of("New build", String.format("%s %s is now available to install.", export.getTitle(), export.getVersion()));
         
-		List<Endpoint> endpoints = entityManager.getResultList("endpoint.find_by_account_identifier", query -> query.setParameter("account_identifier", account_identifier)); 
+		List<Endpoint> endpoints = entityManager.getResultList("endpoint.find_by_account_identifier", query -> query.setParameter("account_identifier", account.getIdentifier())); 
 
 		for (Endpoint endpoint : endpoints) {
 			String endpointArn = endpoint.getArn();
@@ -108,11 +101,12 @@ public class WindmillService {
 			try {
 				boolean success = notificationService.notify(notification, endpointArn);
 				if (success) {
-					LOGGER.info(String.format("Succesfully sent notification to endpoint '%s' for account '%s'.", endpoint, account_identifier));
+					endpoint.setAccessedAt(Instant.now());
+					LOGGER.info(String.format("Succesfully sent notification to endpoint '%s' for account '%s'.", endpoint, account));
 				}
 			}
 			catch (EndpointDisabledException e) {
-				LOGGER.warn(String.format("Endpoint `%s` is reported as disabled by AmazonSNS.", endpoint.getArn()), e);
+				LOGGER.debug(String.format("Endpoint `%s` is reported as disabled by AmazonSNS.", endpoint.getArn()), e);
 			}
 		}
 		

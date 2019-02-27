@@ -4,15 +4,31 @@
              xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
              http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
              version="2.1">
-    <persistence-unit name="windmill-pu">
+    <persistence-unit name="windmill">
         <jta-data-source>${wildfly.ds.name}</jta-data-source>
+        <shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
+        <properties>
+			<property name="wildfly.jpa.default-unit" value="true"/>        
+            <property name="hibernate.connection.url" value="${postgres.url}"/>
+            <property name="hibernate.connection.driver_class" value="org.postgresql.Driver" />
+            <property name="hibernate.connection.username" value="${postgres.username}"/>
+            <property name="hibernate.connection.password" value="${postgres.password}"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect" />
+            <property name="hibernate.default_schema" value="${postgres.schema}"/>        
+            <property name="hibernate.cache.use_query_cache" value="true" />    
+        </properties>
+    </persistence-unit>
+    <persistence-unit name="windmill-extended">
+        <jta-data-source>${wildfly.ds.name}</jta-data-source>
+        <shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
         <properties>
             <property name="hibernate.connection.url" value="${postgres.url}"/>
             <property name="hibernate.connection.driver_class" value="org.postgresql.Driver" />
             <property name="hibernate.connection.username" value="${postgres.username}"/>
             <property name="hibernate.connection.password" value="${postgres.password}"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect" />
-            <property name="hibernate.default_schema" value="${postgres.schema}"/>            
+            <property name="hibernate.default_schema" value="${postgres.schema}"/>        
+            <property name="hibernate.cache.use_query_cache" value="true" />    
         </properties>
-    </persistence-unit>
+    </persistence-unit>    
 </persistence>

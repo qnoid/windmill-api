@@ -22,6 +22,7 @@ import javax.ws.rs.ext.Provider;
 
 import org.jboss.logging.Logger;
 
+import io.windmill.windmill.persistence.Subscription;
 import io.windmill.windmill.services.AuthenticationService;
 import io.windmill.windmill.web.resources.InvalidClaimException;
 import io.windmill.windmill.web.resources.InvalidSignatureException;
@@ -47,9 +48,9 @@ public class AuthorizationClaimContainerRequestFilter implements ContainerReques
 
     		this.authenticationService.validate(jwt);
     		
-			Claims<JWS> claims = Claims.subscription(jwt);
+			Claims<Subscription> claims = Claims.subscription(jwt);
 			
-			if(doesnot(claims.hasTyp("sub"))) {
+			if(doesnot(claims.isTyp(Claims.Type.SUBSCRIPTION))) {
 				LOGGER.debug(String.format("Claim not a subcription type. Instead got: %s", claims.typ));
 				requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());
 			}

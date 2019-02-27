@@ -12,7 +12,7 @@ import javax.persistence.PersistenceContext;
 @Default
 public class StatelessEntityManager implements WindmillEntityManager {
 
-	@PersistenceContext(name = "windmill-pu")
+	@PersistenceContext(name = "windmill")
     private EntityManager em;
 
     public StatelessEntityManager() {

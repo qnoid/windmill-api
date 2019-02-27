@@ -5,10 +5,13 @@ import java.time.Instant;
 import javax.json.bind.annotation.JsonbTypeAdapter;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.ConstraintMode;
 import javax.persistence.Entity;
+import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
@@ -33,7 +36,12 @@ public class Endpoint {
     @NotNull
     private String arn;
 
-    @OneToOne(cascade = CascadeType.MERGE)    
+    @OneToOne(cascade = CascadeType.PERSIST)
+    /* This is only applicable in a test environment which auto generates the schema.
+     * For some reason Hibernate (5.4.1.Final) logs an error message when trying to create a foreign key. 
+     * The mvn test action completes succesfully, still the error detracts the value of the log.   
+     */
+    @JoinColumn(foreignKey=@ForeignKey(ConstraintMode.NO_CONSTRAINT)) 
     @NotNull
     Device device;
     
@@ -42,18 +50,20 @@ public class Endpoint {
     private Instant createdAt;
 
     @Column(name="modified_at")
-    @NotNull
     private Instant modifiedAt;
 
+    @Column(name="accessed_at")
+    private Instant accessedAt;
+
     public Endpoint() {
-        this.createdAt = this.modifiedAt = Instant.now();    	
+        this.createdAt = Instant.now();    	
     }
     
     public Endpoint(String arn, Device device) {
 		super();
 		this.arn = arn;
 		this.device = device;
-		this.createdAt = this.modifiedAt = Instant.now();
+		this.createdAt = Instant.now();
 	}
 
 	public Long getId() {
@@ -98,6 +108,15 @@ public class Endpoint {
 		this.modifiedAt = modifiedAt;
 	}
 	
+	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
+	public Instant getAccessedAt() {
+		return accessedAt;
+	}
+
+	public void setAccessedAt(Instant accessedAt) {
+		this.accessedAt = accessedAt;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;

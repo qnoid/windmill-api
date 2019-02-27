@@ -21,17 +21,11 @@ public class JWT<T extends JWT.Type> {
 	public interface Header {
 
 		public static enum Type {
-			JWT("JWT");
-			
-			final String name;
-		
-			Type(String name) {
-				this.name = name;
-			}
+			JWT;
 			
 			public static Optional<Type> of(String name) {
 		        for (Type t : Type.values()) {
-		            if (t.name.equals(name)) {
+		            if (t.name().equals(name)) {
 		                return Optional.of(t);
 		            }
 		        }
@@ -41,7 +35,7 @@ public class JWT<T extends JWT.Type> {
 		    
 		    @Override
 		    public String toString() {
-		        return name;
+		        return this.name();
 		    }
 		}
 		
