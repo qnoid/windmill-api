@@ -101,6 +101,10 @@ public class SubscriptionAuthorizationToken {
 		this.subscription = subscription;
 	}
 
+	public Instant getExpiresAt() {
+		return this.subscription.getExpiresAt();
+	}	
+
 	@Override
 	public String toString() {
 		return this.authorizationToken.toString();
@@ -125,5 +129,5 @@ public class SubscriptionAuthorizationToken {
 		SubscriptionAuthorizationToken subscriptionAuthorizationToken = (SubscriptionAuthorizationToken) that;
 		
 		return this.authorizationToken.equals(subscriptionAuthorizationToken.authorizationToken); 
-	}	
+	}
 }

@@ -111,9 +111,13 @@ public class AuthenticationService {
 	
 
 	public JWT<JWS> jwt(Claim claim, SubscriptionAuthorizationToken subscriptionAuthorizationToken) throws UnsupportedEncodingException {
+		
+		Subscription subscription = subscriptionAuthorizationToken.getSubscription();
+		
 		Claims<JWS> claims = new Claims<JWS>()
 				.jti(subscriptionAuthorizationToken.toString())
-				.sub(subscriptionAuthorizationToken.getSubscription().getIdentifier().toString())
+				.sub(subscription.getIdentifier().toString())
+				.exp(subscriptionAuthorizationToken.getExpiresAt())
 				.typ(Claims.Type.ACCESS_TOKEN);
 
 		return claim.jws(claims).get();

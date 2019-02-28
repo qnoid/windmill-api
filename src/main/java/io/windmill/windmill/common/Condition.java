@@ -8,8 +8,8 @@ public class Condition {
 		return !condition;
 	}
 	
-    public static <X extends Throwable> void doesnot(boolean condition, Supplier<? extends X> willThrow) throws X {
+    public static <X extends Throwable> void guard(boolean condition, Supplier<? extends X> elseThrow) throws X {
         if (!condition)
-            throw willThrow.get();
+            throw elseThrow.get();
     }
 }

@@ -90,12 +90,14 @@ public class Claims<T> {
 			
 			String jti = payload.getString("jti");		
 			String sub = payload.getString("sub");
+			JsonNumber exp = payload.getJsonNumber("exp");			
 			Type typ = Claims.Type.of(payload.getString("typ")).get();
 			Long version = payload.getJsonNumber("v").longValue();
 		
 			Claims<SubscriptionAuthorizationToken> claims = new Claims<SubscriptionAuthorizationToken>()
 					.jti(jti)
 					.sub(sub)
+					.exp(Instant.ofEpochSecond(exp.longValue()))					
 					.typ(typ)
 					.version(version);
 			
@@ -134,6 +136,10 @@ public class Claims<T> {
 	}
 
 	public boolean hasExpired() {
+		if (this.exp == null) {
+			return false;
+		}
+		
 		return this.exp.isBefore(Instant.now());
 	}
 

@@ -2,6 +2,8 @@ package io.windmill.windmill.web;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -18,12 +20,14 @@ import javax.ws.rs.ext.Provider;
 
 import org.jboss.logging.Logger;
 
+import io.windmill.windmill.common.Condition;
 import io.windmill.windmill.common.Secret;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
 import io.windmill.windmill.services.AuthenticationService;
 import io.windmill.windmill.web.resources.InvalidClaimException;
 import io.windmill.windmill.web.resources.InvalidSignatureException;
 import io.windmill.windmill.web.security.Claims;
+import io.windmill.windmill.web.security.Claims.Type;
 import io.windmill.windmill.web.security.JWT;
 import io.windmill.windmill.web.security.JWT.JWS;
 
@@ -56,6 +60,16 @@ public class SubscriptionAccessContainerRequestFilter implements ContainerReques
     					.get();
 
 			this.authenticationService.exists(secret, subscription_identifier);
+			
+			if(Condition.doesnot(claims.isTyp(Type.ACCESS_TOKEN))) {
+				LOGGER.debug(String.format("Claim not an access token. Instead got: %s", claims.typ));
+				requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());
+			}
+
+			if(claims.hasExpired()) {
+				LOGGER.debug(String.format("Subscription access expired %s minutes ago at: %s", ChronoUnit.MINUTES.between(claims.exp, Instant.now()), claims.exp));				
+				requestContext.abortWith(Response.status(Status.UNAUTHORIZED).entity("The subscription has expired.").build());
+			}
     	}
     	catch(NoSuchElementException e) {
 			LOGGER.debug(String.format("Bad syntax for Authorization header. Got: %s", requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)));			

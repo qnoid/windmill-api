@@ -61,7 +61,7 @@ public class AccountService {
 			Export export = this.entityManager.findOrProvide("export.find_by_identifier", 
 				identitifier(export_identifier), () -> new Export(export_identifier, export_version, export_title));
 		
-			Condition.doesnot(export.account == null || export.hasAccount(account), 
+			Condition.guard(export.account == null || export.hasAccount(account), 
 					() -> new AccountServiceException("io.windmill.api: error: The bundle identifier is already used by another account."));
 
 			export.setModifiedAt(Instant.now());
