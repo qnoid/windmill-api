@@ -113,6 +113,7 @@ public class SubscriptionResource {
      * 	<li> Status.CREATED if a new subscription was created as a result of processing the receipt. </li> 
      *  <li> Status.OK otherwise. </li>  
      *  <li> Status.ACCEPTED When this happens, the receipt was accepted yet it does not appear to be up to date. You should refresh it. Empty body returned.</li>
+     *  <li> Status.NO_CONTENT When this happens, the receipt was accepted yet the subscription has expired. Empty body returned.</li>
      * 	<li> Status.FORBIDDEN if the receipt is invalid </li> 
      * </ul>
      * @See <a href="https://developer.apple.com/library/archive/releasenotes/General/ValidateAppStoreReceipt/Chapters/ValidateRemotely.html#//apple_ref/doc/uid/TP40010573-CH104-SW1">Validating Receipts With the App Store</a> 
@@ -134,6 +135,11 @@ public class SubscriptionResource {
 			AppStoreTransaction appStoreTransaction = this.subscriptionService.verify(receipt, metadata);
 			
 			Subscription subscription = appStoreTransaction.getSubscription();
+			
+			if (subscription.hasExpired()) {
+				return Response.status(Status.NO_CONTENT).build();
+			}
+			
 			Account account = subscription.getAccount();
 						
 			JWT<JWS> jwt = this.authenticationService.jwt(subscription);

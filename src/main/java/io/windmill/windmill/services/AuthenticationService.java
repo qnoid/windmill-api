@@ -95,7 +95,7 @@ public class AuthenticationService {
 						
 			subscriptionAuthorizationToken.setAccessedAt(Instant.now());
 		} catch(NoResultException e) {
-			throw new SubscriptionAuthorizationTokenException("Subscription authorization token for subscription does not exist. **Given that** the token was obtained from this service (i.e. not forged), it should exist.", e);
+			throw new SubscriptionAuthorizationTokenException("Subscription authorization token for subscription does not exist. It may have been revoked. Otherwise, given that the token was obtained from this service (i.e. not forged), it should exist.", e);
     	}		
 	}
 
