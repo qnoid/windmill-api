@@ -38,6 +38,9 @@ public class Subscription {
     @Column(name="modified_at")
     private Instant modifiedAt;
 
+    @Column(name="accessed_at")
+    private Instant accessedAt;
+
     @ManyToOne(cascade = CascadeType.PERSIST)
     @NotNull
     Account account;
@@ -67,6 +70,15 @@ public class Subscription {
 
 	public void setCreatedAt(Instant createdAt) {
 		this.createdAt = createdAt;
+	}
+
+	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
+	public Instant getAccessedAt() {
+		return accessedAt;
+	}
+
+	public void setAccessedAt(Instant accessedAt) {
+		this.accessedAt = accessedAt;
 	}
 
 	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)

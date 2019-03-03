@@ -14,6 +14,7 @@ import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
@@ -68,7 +69,7 @@ public class SubscriptionAccessContainerRequestFilter implements ContainerReques
 
 			if(claims.hasExpired()) {
 				LOGGER.debug(String.format("Subscription access expired %s minutes ago at: %s", ChronoUnit.MINUTES.between(claims.exp, Instant.now()), claims.exp));				
-				requestContext.abortWith(Response.status(Status.UNAUTHORIZED).entity("The subscription has expired.").build());
+				requestContext.abortWith(Response.status(Status.UNAUTHORIZED).entity("expired").type(MediaType.TEXT_PLAIN_TYPE).build());
 			}
     	}
     	catch(NoSuchElementException e) {

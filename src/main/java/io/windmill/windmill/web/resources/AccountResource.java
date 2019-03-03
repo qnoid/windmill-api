@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
@@ -97,6 +98,8 @@ public class AccountResource {
     		Subscription subscription = 
     				this.subscriptionService.subscription(account_identifier, claims.sub);
 
+    		subscription.setAccessedAt(Instant.now());
+    		
     		Set<Export> exports = subscription.getAccount().getExports();
       
     		return Response.ok(exports).build();
@@ -135,6 +138,8 @@ public class AccountResource {
     		Subscription subscription = 
     				this.subscriptionService.subscription(account_identifier, claims.sub);
 
+    		subscription.setAccessedAt(Instant.now());
+    		
     		FormDataMap formDataMap = FormDataMap.get(input);
     	
 			Manifest metadata = formDataMap.readManifest();

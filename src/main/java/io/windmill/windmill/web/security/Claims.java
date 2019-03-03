@@ -56,52 +56,30 @@ public class Claims<T> {
 	}
 
 	public static Claims<Subscription> subscription(JWT<JWS> jwt) {
-		
-		byte[] decodedPayload = Base64.getUrlDecoder().decode(jwt.payload);		
-		JsonObject payload = Json.createReader(new StringReader(new String(decodedPayload, Charset.forName("UTF-8")))).readObject();			
-		
-		try {
-			
-			String jti = payload.getString("jti");		
-			String sub = payload.getString("sub");
-			JsonNumber exp = payload.getJsonNumber("exp");
-			Type typ = Claims.Type.of(payload.getString("typ")).get();
-			Long version = payload.getJsonNumber("v").longValue();
-			
-			Claims<Subscription> claims = new Claims<Subscription>()
-					.jti(jti)
-					.sub(sub)
-					.exp(Instant.ofEpochSecond(exp.longValue()))
-					.typ(typ)
-					.version(version);			
-			
-			return claims;			
-		} catch (NullPointerException | IllegalArgumentException e) {
-			throw new InvalidClaimException("Claim is invalid.");
-		}
+		return make(jwt);
 	}
 	
-	public static Claims<SubscriptionAuthorizationToken> accessToken(JWT<JWS> jwt) throws InvalidClaimException {
-		
+	public static Claims<SubscriptionAuthorizationToken> accessToken(JWT<JWS> jwt) throws InvalidClaimException {		
+		return make(jwt);
+	}
+
+	private static <T> Claims<T> make(JWT<JWS> jwt) {
 		byte[] decodedPayload = Base64.getUrlDecoder().decode(jwt.payload);		
 		JsonObject payload = Json.createReader(new StringReader(new String(decodedPayload, Charset.forName("UTF-8")))).readObject();			
 		
-		try {
-			
+		try {			
 			String jti = payload.getString("jti");		
 			String sub = payload.getString("sub");
 			JsonNumber exp = payload.getJsonNumber("exp");			
 			Type typ = Claims.Type.of(payload.getString("typ")).get();
 			Long version = payload.getJsonNumber("v").longValue();
 		
-			Claims<SubscriptionAuthorizationToken> claims = new Claims<SubscriptionAuthorizationToken>()
+			return new Claims<T>()
 					.jti(jti)
 					.sub(sub)
 					.exp(Instant.ofEpochSecond(exp.longValue()))					
 					.typ(typ)
-					.version(version);
-			
-			return claims;			
+					.version(version);			
 		} catch (NullPointerException | IllegalArgumentException e) {
 			throw new InvalidClaimException("Claim is invalid.");
 		}
