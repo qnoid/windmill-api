@@ -1,5 +1,6 @@
 package io.windmill.windmill.services;
 
+import static io.windmill.windmill.common.Condition.guard;
 import static io.windmill.windmill.persistence.QueryConfiguration.identitifier;
 
 import java.time.Instant;
@@ -29,7 +30,8 @@ import io.windmill.windmill.persistence.Subscription.Metadata;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.persistence.apple.AppStoreTransaction;
 import io.windmill.windmill.persistence.web.Receipt;
-import io.windmill.windmill.services.AppStoreService.VerifyResponse;
+import io.windmill.windmill.services.AppStoreService.InAppPurchaseReceipt;
+import io.windmill.windmill.services.AppStoreService.LatestReceipt;
 
 @RequestScoped
 public class SubscriptionService {
@@ -56,7 +58,26 @@ public class SubscriptionService {
     	this.entityManager = WindmillEntityManager.unwrapEJBExceptions(this.entityManager);        
     }
     
-	/* private */ AppStoreTransaction updateOrCreateSubscription(String transaction_identifier, String receipt, Instant expiresAt, Map<Metadata, Boolean> metadata) {
+	/**
+	 * 
+	 * @param transactions an array of transactions as returned by the {@link AppStoreService}
+	 * @return the transaction that expires last in the given array
+	 * @throws ReceiptVerificationException
+	 */
+	/* private */ JsonObject latest(JsonArray transactions) throws ReceiptVerificationException {
+		return transactions.stream().filter(Product.KNOWN_PRODUCT)
+				.sorted(AppStoreService.EXPIRES_DATE_DESCENDING)
+				.findFirst()
+				.orElseThrow(new Supplier<ReceiptVerificationException>() {
+
+					@Override
+					public ReceiptVerificationException get() {
+						return new ReceiptVerificationException(String.format("Receipt was valid but no transactions found with a known product id."));
+					}
+				}).asJsonObject();
+	}
+	
+	/* private */ Subscription updateOrCreateSubscription(String transaction_identifier, String receipt, Instant expiresAt, Map<Metadata, Boolean> metadata) {
 		
 		AppStoreTransaction appStoreTransaction = this.entityManager.findOrProvide("transaction.find_by_identifier", identitifier(transaction_identifier), new Provider<AppStoreTransaction>(){
 
@@ -73,56 +94,105 @@ public class SubscriptionService {
 		appStoreTransaction.setExpiresAt(expiresAt);
 		appStoreTransaction.setModifiedAt(Instant.now());
 		
-		return appStoreTransaction;				
+		return appStoreTransaction.getSubscription();				
 	}
 	
-	/* private */ AppStoreTransaction updateOrCreateSubscription(JsonArray transactions, String receipt, Map<Metadata, Boolean> metadata) throws ReceiptVerificationException, NoRecoredTransactionsException {
+	/* private */ Subscription updateOrCreateSubscription(JsonArray transactions, String receipt, Map<Metadata, Boolean> metadata) throws ReceiptVerificationException, NoRecoredTransactionsException {
 		
 		if (transactions.isEmpty()) {
 			throw new NoRecoredTransactionsException("The App Store has not recorded any transactions for the user yet. It may be that the application receipt has not yet been updated.");
 		}			
 
-		JsonObject transaction = transactions.stream().filter(Product.KNOWN_PRODUCT)
-				.sorted(VerifyResponse.EXPIRES_DATE_DESCENDING)
-				.findFirst()
-				.orElseThrow(new Supplier<ReceiptVerificationException>() {
-
-					@Override
-					public ReceiptVerificationException get() {
-						return new ReceiptVerificationException(String.format("Receipt was valid but no transactions found with a known product id."));
-					}
-				}).asJsonObject();
+		JsonObject transaction = latest(transactions);
 		
 		String transaction_identifier = transaction.getString("original_transaction_id");
 		String expiresAt = transaction.getString("expires_date");
 			
-		return updateOrCreateSubscription(transaction_identifier, receipt, Instant.from(VerifyResponse.DATE_FORMATER.parse(expiresAt)), metadata);
+		return updateOrCreateSubscription(transaction_identifier, receipt, Instant.from(AppStoreService.DATE_FORMATER.parse(expiresAt)), metadata);
 	}
 	
-	public AppStoreTransaction verify(Receipt receipt)  throws ReceiptVerificationException, NoRecoredTransactionsException {
-		return this.verify(receipt, new Hashtable<>());
+	/* private */ Subscription updateSubscription(String transaction_identifier, String receipt, Instant expiresAt, Map<Metadata, Boolean> metadata) throws NoSubscriptionException {
+		
+		try {
+			AppStoreTransaction appStoreTransaction = this.entityManager.getSingleResult("transaction.find_by_identifier", identitifier(transaction_identifier));	
+		
+			appStoreTransaction.setReceipt(receipt);
+			appStoreTransaction.setExpiresAt(expiresAt); //should it update only when its the later than the current or not?
+			appStoreTransaction.setModifiedAt(Instant.now());
+		
+			return appStoreTransaction.getSubscription();
+		} catch (NoResultException e) {
+			throw new NoSubscriptionException(String.format("A subscription does not exist for the given identifier '%s'.", transaction_identifier));
+		}
 	}
 
-	public AppStoreTransaction verify(Receipt receipt, Map<Metadata, Boolean> metadata) throws ReceiptVerificationException, NoRecoredTransactionsException {
+	Subscription updateSubscription(JsonArray transactions, String receipt, Map<Metadata, Boolean> metadata) throws ReceiptVerificationException, NoRecoredTransactionsException, NoSubscriptionException {
+		
+		if (transactions.isEmpty()) {
+			throw new NoRecoredTransactionsException("The App Store has not recorded any transactions for the user yet. It may be that the application receipt has not yet been updated.");
+		}			
+
+		JsonObject transaction = latest(transactions);
+		
+		String transaction_identifier = transaction.getString("original_transaction_id");
+		String expiresAt = transaction.getString("expires_date");
+			
+		return updateSubscription(transaction_identifier, receipt, Instant.from(AppStoreService.DATE_FORMATER.parse(expiresAt)), metadata);
+	}
+	
+	public Subscription subscription(Receipt receipt)  throws ReceiptVerificationException, NoRecoredTransactionsException {
+		return this.subscription(receipt, new Hashtable<>());
+	}
+
+	public Subscription subscription(Receipt receipt, Map<Metadata, Boolean> metadata) throws ReceiptVerificationException, NoRecoredTransactionsException {
 		
 		String receiptData = receipt.getData();		
 		
-		return this.appStoreService.verify(receiptData, new VerifyResponse() {
+		return this.appStoreService.receipt(receiptData, new InAppPurchaseReceipt() {
 			
 			@Override
-			public AppStoreTransaction verify(String bundle_id, JsonArray transactions)
+			public AppStoreTransaction process(String bundle_id, JsonArray transactions)
 					throws ReceiptVerificationException, NoRecoredTransactionsException {
 				
 				if (Bundle.of(bundle_id).isPresent()) {							
-					return updateOrCreateSubscription(transactions, receiptData, metadata);
+					return updateOrCreateSubscription(transactions, receiptData, metadata).getTransaction();
 				} else {
 					throw new ReceiptVerificationException(String.format("Receipt was valid but there was mismatch on the bundle id '%s'.", bundle_id));
 				}
 			}
-		});
+		}).getSubscription();
+	}
+	
+	/**
+	 * 
+	 * @param subscription the subscription should exist
+	 * @throws ReceiptVerificationException
+	 * @throws NoRecoredTransactionsException
+	 * @throws SubscriptionExpiredException if the subscription has since elapsed
+	 * @throws NoSubscriptionException if the given subscription does not exist
+	 */
+	public void latest(Subscription subscription)  throws ReceiptVerificationException, NoRecoredTransactionsException, SubscriptionExpiredException, NoSubscriptionException {
+	
+		String receipt = subscription.getTransaction().getReceipt();
+		
+		this.latest(new Receipt(receipt), new Hashtable<>());
+	}
+	public void latest(Receipt receipt, Map<Metadata, Boolean> metadata) throws ReceiptVerificationException, NoRecoredTransactionsException, SubscriptionExpiredException, NoSubscriptionException {
+		
+		String receiptData = receipt.getData();		
+		
+		Subscription subscription = this.appStoreService.latest(receiptData, new LatestReceipt() {
+			
+			@Override
+			public AppStoreTransaction process(JsonArray transactions) throws ReceiptVerificationException, NoRecoredTransactionsException {
+				return updateSubscription(transactions, receiptData, metadata).getTransaction();
+			}
+		}).getSubscription();
+		
+		guard(subscription.isActive(), () -> new SubscriptionExpiredException());
 	}
 
-	public Subscription subscription(UUID account_identifier, String subscription_identifier) throws NoSubscriptionException {
+	public Subscription subscription(UUID account_identifier, UUID subscription_identifier) throws NoSubscriptionException {
 		
 		try {
 			
@@ -137,6 +207,16 @@ public class SubscriptionService {
 			});
 			
 			return subscription;
+		} catch (NoResultException e) {
+			throw new NoSubscriptionException("A subscription does not exist for the given account.");
+		}		
+	}
+	
+	public Subscription subscription(UUID subscription_identifier) throws NoSubscriptionException {
+		
+		try {
+			
+			return this.entityManager.getSingleResult("subscription.find_by_identifier", identitifier(subscription_identifier));
 		} catch (NoResultException e) {
 			throw new NoSubscriptionException("A subscription does not exist for the given account.");
 		}		
