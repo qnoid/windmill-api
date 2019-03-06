@@ -1,7 +1,6 @@
 package io.windmill.windmill.persistence.apple;
 
 import java.time.Instant;
-import java.util.UUID;
 
 import javax.json.bind.annotation.JsonbTypeAdapter;
 import javax.persistence.CascadeType;
@@ -69,7 +68,6 @@ public class AppStoreTransaction {
      */
     public AppStoreTransaction()
     {
-		this.identifier = UUID.randomUUID().toString();
 		this.receipt = "";
 		this.expiresAt = Instant.now();
 		this.subscription = new Subscription();

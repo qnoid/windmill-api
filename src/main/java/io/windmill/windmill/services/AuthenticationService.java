@@ -5,6 +5,7 @@ import java.security.InvalidKeyException;
 import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -77,7 +78,7 @@ public class AuthenticationService {
 	 * @throws SubscriptionAuthorizationTokenException if the given token was not found
 	 */
 	@Transactional
-	public void exists(Secret<SubscriptionAuthorizationToken> secret, String subscription_identifier) throws NoSuchElementException, SubscriptionAuthorizationTokenException {
+	public void exists(Secret<SubscriptionAuthorizationToken> secret, UUID subscription_identifier) throws NoSuchElementException, SubscriptionAuthorizationTokenException {
 		
 		String token = secret.encoded().orElseThrow(() -> new NoSuchElementException() );
 		
@@ -102,8 +103,7 @@ public class AuthenticationService {
 	public JWT<JWS> jwt(Claim claim, Subscription subscription) throws UnsupportedEncodingException {
 		Claims<JWS> claims = new Claims<JWS>()
 				.jti(Secret.create(15).base64())
-				.sub(subscription.getIdentifier())
-				.exp(subscription.getExpiresAt())
+				.sub(subscription.getIdentifier().toString())
 				.typ(Claims.Type.SUBSCRIPTION);
 
 		return claim.jws(claims).get();

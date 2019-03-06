@@ -96,7 +96,7 @@ public class AccountResource {
 
     	try {    	
     		Subscription subscription = 
-    				this.subscriptionService.subscription(account_identifier, claims.sub);
+    				this.subscriptionService.subscription(account_identifier, UUID.fromString(claims.sub));
 
     		subscription.setAccessedAt(Instant.now());
     		
@@ -111,6 +111,9 @@ public class AccountResource {
     	catch (NoSubscriptionException e) {
     		throw new UnauthorizedAccountAccessException(String.format("Unauthorized acccess attempted for account '%s' using claim '%s'.", account_identifier, claims), e);
     	}
+    	catch(IllegalArgumentException e) { //UUID.fromString
+			return Response.status(Status.UNAUTHORIZED).build();
+        }    	    	    	
     }
 
     /**
@@ -136,7 +139,7 @@ public class AccountResource {
 
     	try {    	
     		Subscription subscription = 
-    				this.subscriptionService.subscription(account_identifier, claims.sub);
+    				this.subscriptionService.subscription(account_identifier, UUID.fromString(claims.sub));
 
     		subscription.setAccessedAt(Instant.now());
     		
@@ -171,6 +174,9 @@ public class AccountResource {
 			LOGGER.debug(String.format("No token present at Authorization: Bearer."));			
 			return Response.status(Status.BAD_REQUEST).build();    		
     	}    	
+    	catch(IllegalArgumentException e) { //UUID.fromString
+			return Response.status(Status.UNAUTHORIZED).build();
+        }    	    	
     	catch (NoSubscriptionException e) {
     		throw new UnauthorizedAccountAccessException(String.format("Unauthorized acccess attempted for account '%s' using claim '%s'.", account_identifier, claims), e);
 		} catch (ConfigurationException e) {

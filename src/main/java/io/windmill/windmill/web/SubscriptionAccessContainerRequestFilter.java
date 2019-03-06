@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.annotation.Priority;
 import javax.inject.Inject;
@@ -52,7 +53,7 @@ public class SubscriptionAccessContainerRequestFilter implements ContainerReques
 
     		Claims<SubscriptionAuthorizationToken> claims = Claims.accessToken(jwt);
     		
-    		String subscription_identifier = Optional.ofNullable(claims.sub).get();
+    		UUID subscription_identifier = Optional.ofNullable(claims.sub).map(UUID::fromString).get();
     		
     		Secret<SubscriptionAuthorizationToken> secret = 
     				Optional.ofNullable(claims.jti)

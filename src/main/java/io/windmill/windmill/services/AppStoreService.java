@@ -68,20 +68,21 @@ public class AppStoreService {
 	
 	private String secret = System.getenv("WINDMILL_APP_STORE_CONNECT_SHARED_SECRET");
 
-	@FunctionalInterface
-	interface VerifyResponse {
+
+	public static final DateTimeFormatter DATE_FORMATER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss VV");
+	public static final Comparator<JsonValue> EXPIRES_DATE_DESCENDING = new Comparator<JsonValue>() {
 		
-		public static final DateTimeFormatter DATE_FORMATER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss VV");
-		public static final Comparator<JsonValue> EXPIRES_DATE_DESCENDING = new Comparator<JsonValue>() {
+		@Override
+		public int compare(JsonValue o1, JsonValue o2) {
+			String left = o1.asJsonObject().getString("expires_date");
+			String right = o2.asJsonObject().getString("expires_date");
 			
-			@Override
-			public int compare(JsonValue o1, JsonValue o2) {
-				String left = o1.asJsonObject().getString("expires_date");
-				String right = o2.asJsonObject().getString("expires_date");
-				
-				return Instant.from(VerifyResponse.DATE_FORMATER.parse(right)).compareTo(Instant.from(VerifyResponse.DATE_FORMATER.parse(left)));
-			}
-		};
+			return Instant.from(DATE_FORMATER.parse(right)).compareTo(Instant.from(DATE_FORMATER.parse(left)));
+		}
+	};
+
+	@FunctionalInterface
+	interface InAppPurchaseReceipt {
 		
 		/**
 		 * The transactions are guaranteed to originate from a valid receipt.
@@ -93,11 +94,45 @@ public class AppStoreService {
 		 * @throws ReceiptVerificationException in case the given `bundle id` is not known or no transaction exists with a known `product_id` 
 		 * @throws NoRecoredTransactionsException in case of no transactions 
 		 */
-		public AppStoreTransaction verify(String bundle_id, JsonArray transactions) throws ReceiptVerificationException, NoRecoredTransactionsException;
+		public AppStoreTransaction process(String bundle_id, JsonArray transactions) throws ReceiptVerificationException, NoRecoredTransactionsException;
 	}
 	
-	public AppStoreTransaction verify(String receiptData, VerifyResponse response) throws ReceiptVerificationException, NoRecoredTransactionsException 
+	public AppStoreTransaction receipt(String receiptData, InAppPurchaseReceipt inAppPurchaseReceipt) throws ReceiptVerificationException, NoRecoredTransactionsException 
 	{
+		JsonObject json = this.verify(receiptData);
+
+		JsonObject receipt = json.getJsonObject("receipt");
+		String bundle_id = receipt.getString("bundle_id");
+		JsonArray in_app = receipt.getJsonArray("in_app");
+		
+		return inAppPurchaseReceipt.process(bundle_id, in_app);
+	}
+
+	@FunctionalInterface
+	interface LatestReceipt {
+		
+		/**
+		 * The transactions are guaranteed to originate from a valid receipt.
+		 * 
+		 * @param transactions 
+		 *  
+		 * @return
+		 * @throws ReceiptVerificationException in case no transaction exists with a known `product_id` 
+		 * @throws NoRecoredTransactionsException in case of no transactions 
+		 */
+		public AppStoreTransaction process(JsonArray transactions) throws ReceiptVerificationException, NoRecoredTransactionsException;
+	}
+
+	public AppStoreTransaction latest(String receiptData, LatestReceipt receipt) throws ReceiptVerificationException, NoRecoredTransactionsException 
+	{
+		JsonObject json = this.verify(receiptData);
+
+		JsonArray latest_receipt_info = json.getJsonArray("latest_receipt_info");
+		
+		return receipt.process(latest_receipt_info);
+	}
+
+	private JsonObject verify(String receiptData) throws ReceiptVerificationException {
 		LOGGER.debug(receiptData);
 
 		JsonObject json = verifyAppStoreReceipt(receiptData);		
@@ -112,18 +147,12 @@ public class AppStoreService {
 		
 		switch (statusCode) {
 		case RECEIPT_VALID:
-			
-			JsonObject receipt = json.getJsonObject("receipt");
-			String bundle_id = receipt.getString("bundle_id");
-			JsonArray in_app = receipt.getJsonArray("in_app");
-			
-			return response.verify(bundle_id, in_app);
+			return json;
 		default:
 			throw new ReceiptVerificationException(statusCode);
 		}
-
 	}
-
+	
 	private JsonObject verifyAppStoreReceipt(String receiptData) {
 		return this.verify("https://buy.itunes.apple.com", receiptData);
 	}

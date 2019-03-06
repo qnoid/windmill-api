@@ -10,6 +10,7 @@ import java.util.function.Function;
 import javax.json.Json;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
+import javax.json.JsonString;
 
 import io.windmill.windmill.persistence.Subscription;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
@@ -68,18 +69,14 @@ public class Claims<T> {
 		JsonObject payload = Json.createReader(new StringReader(new String(decodedPayload, Charset.forName("UTF-8")))).readObject();			
 		
 		try {			
-			String jti = payload.getString("jti");		
-			String sub = payload.getString("sub");
-			JsonNumber exp = payload.getJsonNumber("exp");			
-			Type typ = Claims.Type.of(payload.getString("typ")).get();
-			Long version = payload.getJsonNumber("v").longValue();
-		
-			return new Claims<T>()
-					.jti(jti)
-					.sub(sub)
-					.exp(Instant.ofEpochSecond(exp.longValue()))					
-					.typ(typ)
-					.version(version);			
+			Claims<T> claims = new Claims<T>();
+			Optional.ofNullable(payload.get("jti")).map(jti -> ((JsonString)jti).getString()).ifPresent(jti -> claims.jti(jti));			
+			Optional.ofNullable(payload.get("sub")).map(sub -> ((JsonString)sub).getString()).ifPresent(sub -> claims.sub(sub));			
+			Optional.ofNullable(payload.get("exp")).map(exp -> (JsonNumber) exp).ifPresent(exp -> claims.exp(Instant.ofEpochSecond(exp.longValue())));
+			Optional.ofNullable(payload.get("typ")).map(typ -> ((JsonString)typ).getString()).map(typ -> Claims.Type.of(typ).get()).ifPresent(type -> claims.typ(type));
+			Optional.ofNullable(payload.get("v")).map(v -> (JsonNumber) v).ifPresent(v -> claims.version(v.longValue()));			
+
+			return claims;		
 		} catch (NullPointerException | IllegalArgumentException e) {
 			throw new InvalidClaimException("Claim is invalid.");
 		}

@@ -22,7 +22,7 @@ import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 @Entity
 @Table(name="subscription_authorization_token")
 @NamedQueries(
-    @NamedQuery(name = "subscription_authorization_token.belongs_to_subscription_identifier", query = "SELECT sat FROM SubscriptionAuthorizationToken sat WHERE sat.subscription.transaction.identifier = :subscription_identifier AND sat.authorizationToken.value = :authorization_token")
+    @NamedQuery(name = "subscription_authorization_token.belongs_to_subscription_identifier", query = "SELECT sat FROM SubscriptionAuthorizationToken sat WHERE sat.subscription.identifier = :subscription_identifier AND sat.authorizationToken.value = :authorization_token")
     )
 public class SubscriptionAuthorizationToken {
 

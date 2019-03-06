@@ -56,7 +56,7 @@ public class AuthenticationServiceTest {
 	public void testGivenAuthorizationTokenAssertSecret() {
 		AuthenticationService authenticationService = new AuthenticationService();
 		
-		String emptyBearer = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjEwMDAwMDA0OTc5MzE5OTMiLCJleHAiOjE1NTEzNzAwMDQsInR5cCI6ImF0IiwidiI6MX0.xdI-bjvFV87pk8zPDFWCCsO4dmsiazo-5rOO79M1b24";
+		String emptyBearer = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjU1RkQyQUMzLTdERTItNEM2Ny1CMEY4LTc5RTdDRkEwMjBDMiIsImV4cCI6MTU1MTM3MDAwNCwidHlwIjoiYXQiLCJ2IjoxfQ.WrRdH8jS8oRNdGFe5ki8Bn2qiiqXaIjtfo2WJe74bV4";
 		
 		JWT<JWS> jwt = authenticationService.token(emptyBearer);
 		

@@ -3,6 +3,7 @@ package io.windmill.windmill.web.resources;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -14,6 +15,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -25,7 +27,6 @@ import org.jboss.logging.Logger;
 import io.windmill.windmill.persistence.Account;
 import io.windmill.windmill.persistence.Subscription;
 import io.windmill.windmill.persistence.Subscription.Metadata;
-import io.windmill.windmill.persistence.apple.AppStoreTransaction;
 import io.windmill.windmill.persistence.web.Receipt;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
 import io.windmill.windmill.services.AppStoreServiceException;
@@ -34,6 +35,7 @@ import io.windmill.windmill.services.AuthenticationServiceException;
 import io.windmill.windmill.services.NoRecoredTransactionsException;
 import io.windmill.windmill.services.NoSubscriptionException;
 import io.windmill.windmill.services.ReceiptVerificationException;
+import io.windmill.windmill.services.SubscriptionExpiredException;
 import io.windmill.windmill.services.SubscriptionService;
 import io.windmill.windmill.web.RequiresSubscriptionClaim;
 import io.windmill.windmill.web.security.Claims;
@@ -52,25 +54,41 @@ public class SubscriptionResource {
     @Inject
     private AuthenticationService authenticationService;
 
+    /**
+     * Use from a client/platform that doesn't integrate with StoreKit  (i.e. the web or Windmill on the Mac outside the App Store). 
+     * 
+     * Calls to this endpoint should only be made for an existing subscription.
+     * 
+     * Will update with latest receipt info.
+     * 
+     * @param subscription_identifier
+     * @param authorization
+     * @return A JSON object `{"access_token":"[JWT]"}` in case of a Status.OK.
+     * <ul> 
+     *  <li> Status.OK </li>  
+     *  <li> Status.ACCEPTED When this happens, the receipt was accepted yet it does not appear to be up to date. You should refresh it. Empty body returned.</li>
+     *  <li> Status.UNAUTHORIZED When the given claim is invalid.</li>
+     *  <li> Status.UNAUTHORIZED(expired) When the subscription has expired.</li>
+     * 	<li> Status.FORBIDDEN if no subscription was found for the given claim</li> 
+     * </ul>
+     */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
-    @Path("/")
+    @Path("/{account}")
     @Transactional
 	@RequiresSubscriptionClaim
-    public Response issueSubscriptionAccess(final AccountIdentifier identifier, @HeaderParam(HttpHeaders.AUTHORIZATION) String authorization) {
+	public Response isSubscriber(@PathParam("account") final UUID account_identifier, @HeaderParam(HttpHeaders.AUTHORIZATION) String authorization) {
     	
-        if (identifier.account_identifier == null) {
-        	return Response.status(Status.BAD_REQUEST).entity(String.format("Mandatory field 'account_identifier' is missing.")).type(MediaType.TEXT_PLAIN_TYPE).build();        	
-        }
-
     	try {    					
     		JWT<JWS> jwt = this.authenticationService.subscription(authorization);
 			
 			Claims<Subscription> claims = Claims.subscription(jwt);
 			
 			Subscription subscription = 
-					this.subscriptionService.subscription(identifier.account_identifier, claims.sub);
+					this.subscriptionService.subscription(account_identifier, UUID.fromString(claims.sub));			
+			
+			this.subscriptionService.latest(subscription);
 			
 	    	SubscriptionAuthorizationToken subscriptionAuthorizationToken = this.authenticationService.authorizationToken(subscription);
 	    	
@@ -90,10 +108,80 @@ public class SubscriptionResource {
 			LOGGER.error(e.getMessage(), e);
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
-    	catch(InvalidSignatureException | InvalidClaimException e) {
+    	catch(IllegalArgumentException | InvalidClaimException e) { //UUID.fromString
 			return Response.status(Status.UNAUTHORIZED).build();
         }    	
-    	catch(NoSubscriptionException e) { // subscriptionService.subscription(account_identifier, subscription_identifier)
+    	catch(NoSubscriptionException e) { 
+    		/*
+    		 * subscriptionService.subscription(subscription_identifier) throws NoSubscriptionException
+    		 * subscriptionService.latest(subscription)
+    		 */
+    		
+			LOGGER.debug(e.getMessage());			    		
+    		return Response.status(Status.FORBIDDEN).build();
+    	}
+    	catch(SubscriptionExpiredException e) { //this.subscriptionService.latest(subscription);
+    		return Response.status(Status.UNAUTHORIZED).entity("expired").build();
+		} catch (ReceiptVerificationException e) {
+			return Response.status(Status.FORBIDDEN).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
+		} catch (NoRecoredTransactionsException e) {
+			return Response.status(Status.ACCEPTED).build();
+		}
+    }
+    
+    /**
+     * Does not make any guarantees that the subscription hasn't elapsed.
+     * 
+     * @param authorization
+     * @return A JSON object `{"access_token":"[JWT]"}` in case of a Status.OK.
+     * <ul> 
+     *  <li> Status.OK </li>  
+     *  <li> Status.UNAUTHORIZED When the given claim is invalid.</li>
+     * 	<li> Status.FORBIDDEN if no subscription was found for the given claim</li> 
+     * </ul>
+     */
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @Path("/")
+    @Transactional
+	@RequiresSubscriptionClaim
+    public Response isSubscriber(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorization) {
+    	
+    	try {    					
+    		JWT<JWS> jwt = this.authenticationService.subscription(authorization);
+			
+			Claims<Subscription> claims = Claims.subscription(jwt);
+			
+			Subscription subscription = 
+					this.subscriptionService.subscription(UUID.fromString(claims.sub));			
+			
+			if (subscription.hasExpired()) {
+				return Response.status(Status.UNAUTHORIZED).entity("expired").build();
+			}
+
+	    	SubscriptionAuthorizationToken subscriptionAuthorizationToken = this.authenticationService.authorizationToken(subscription);
+	    	
+			JWT<JWS> accessToken = this.authenticationService.jwt(subscriptionAuthorizationToken);
+
+			JsonObject response = Json.createObjectBuilder()
+					.add("access_token", accessToken.toString())
+					.build();
+	
+	    	return Response.ok(response).build();
+    	}
+    	catch(NoSuchElementException e) {
+			LOGGER.debug(String.format("No token present at Authorization: Bearer."));			
+			return Response.status(Status.BAD_REQUEST).build();    		
+    	}    	
+		catch(JsonException | NullPointerException | AuthenticationServiceException e) {
+			LOGGER.error(e.getMessage(), e);
+			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+		}
+    	catch(IllegalArgumentException | InvalidClaimException e) { //UUID.fromString
+			return Response.status(Status.UNAUTHORIZED).build();
+        }    	
+    	catch(NoSubscriptionException e) { 
 			LOGGER.debug(e.getMessage());			    		
     		return Response.status(Status.FORBIDDEN).build();
     	}
@@ -130,11 +218,8 @@ public class SubscriptionResource {
 		}
 
 		try {
-
 			Map<Metadata, Boolean> metadata = new Hashtable<>();
-			AppStoreTransaction appStoreTransaction = this.subscriptionService.verify(receipt, metadata);
-			
-			Subscription subscription = appStoreTransaction.getSubscription();
+			Subscription subscription = this.subscriptionService.subscription(receipt, metadata);			
 			
 			if (subscription.hasExpired()) {
 				return Response.status(Status.NO_CONTENT).build();
