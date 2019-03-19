@@ -20,6 +20,8 @@ import io.windmill.windmill.persistence.QueryConfiguration;
 import io.windmill.windmill.persistence.Subscription;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
+import io.windmill.windmill.services.exceptions.AuthenticationServiceException;
+import io.windmill.windmill.services.exceptions.MissingKeyException;
 import io.windmill.windmill.web.SubscriptionAuthorizationTokenException;
 import io.windmill.windmill.web.security.Claim;
 import io.windmill.windmill.web.security.Claims;

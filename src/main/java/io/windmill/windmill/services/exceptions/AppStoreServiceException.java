@@ -1,4 +1,4 @@
-package io.windmill.windmill.services;
+package io.windmill.windmill.services.exceptions;
 
 public class AppStoreServiceException extends RuntimeException {
 

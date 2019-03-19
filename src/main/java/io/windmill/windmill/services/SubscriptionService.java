@@ -29,9 +29,15 @@ import io.windmill.windmill.persistence.Subscription;
 import io.windmill.windmill.persistence.Subscription.Metadata;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.persistence.apple.AppStoreTransaction;
+import io.windmill.windmill.persistence.apple.User;
 import io.windmill.windmill.persistence.web.Receipt;
+import io.windmill.windmill.persistence.web.CKUserRecord;
 import io.windmill.windmill.services.AppStoreService.InAppPurchaseReceipt;
 import io.windmill.windmill.services.AppStoreService.LatestReceipt;
+import io.windmill.windmill.services.exceptions.NoRecoredTransactionsException;
+import io.windmill.windmill.services.exceptions.NoSubscriptionException;
+import io.windmill.windmill.services.exceptions.ReceiptVerificationException;
+import io.windmill.windmill.services.exceptions.SubscriptionExpiredException;
 
 @RequestScoped
 public class SubscriptionService {
@@ -192,7 +198,7 @@ public class SubscriptionService {
 		guard(subscription.isActive(), () -> new SubscriptionExpiredException());
 	}
 
-	public Subscription subscription(UUID account_identifier, UUID subscription_identifier) throws NoSubscriptionException {
+	public Subscription get(UUID account_identifier, UUID subscription_identifier) throws NoSubscriptionException {
 		
 		try {
 			
@@ -212,13 +218,28 @@ public class SubscriptionService {
 		}		
 	}
 	
-	public Subscription subscription(UUID subscription_identifier) throws NoSubscriptionException {
+	public Subscription get(UUID subscription_identifier) throws NoSubscriptionException {
 		
-		try {
-			
+		try {			
 			return this.entityManager.getSingleResult("subscription.find_by_identifier", identitifier(subscription_identifier));
 		} catch (NoResultException e) {
-			throw new NoSubscriptionException("A subscription does not exist for the given account.");
+			throw new NoSubscriptionException("A subscription does not exist with the given identifier.");
 		}		
+	}
+
+	public void subscribe(CKUserRecord userRecord, Subscription subscription) {
+		
+		User user = this.entityManager.findOrProvide("user.find_by_identifier", identitifier(userRecord.getIdentifier()), new Provider<User>() {
+
+			@Override
+			public @NotNull User get() {
+				User user = new User(userRecord.getIdentifier(), userRecord.getContainer());
+				entityManager.persist(user);
+				return user;
+			}}
+		);	
+		
+		subscription.setAccount(user.getAccount());
+		subscription.setModifiedAt(Instant.now());
 	}
 }

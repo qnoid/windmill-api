@@ -23,6 +23,9 @@ import javax.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 
 import io.windmill.windmill.persistence.apple.AppStoreTransaction;
+import io.windmill.windmill.services.exceptions.AppStoreServiceException;
+import io.windmill.windmill.services.exceptions.NoRecoredTransactionsException;
+import io.windmill.windmill.services.exceptions.ReceiptVerificationException;
 
 @ApplicationScoped
 public class AppStoreService {

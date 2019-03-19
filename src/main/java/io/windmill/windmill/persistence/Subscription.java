@@ -49,7 +49,6 @@ public class Subscription {
     private Instant accessedAt;
 
     @ManyToOne(cascade = CascadeType.PERSIST)
-    @NotNull
     Account account;
 
     @OneToOne(mappedBy="subscription")
@@ -63,14 +62,6 @@ public class Subscription {
     {
     	this.identifier = UUID.randomUUID();    	
 	    this.createdAt = Instant.now();	
-    	this.account = new Account();
-	}
-
-    public Subscription(Account account)
-    {
-    	this.identifier = UUID.randomUUID();    	
-    	this.account = account;
-	    this.createdAt = Instant.now();    	
 	}
 
 	@JsonbTypeSerializer(CustomJsonUUIDSerializer.class)

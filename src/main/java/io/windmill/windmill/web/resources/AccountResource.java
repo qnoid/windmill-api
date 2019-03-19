@@ -42,13 +42,13 @@ import io.windmill.windmill.persistence.Export;
 import io.windmill.windmill.persistence.Subscription;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
 import io.windmill.windmill.services.AccountService;
-import io.windmill.windmill.services.AccountServiceException;
 import io.windmill.windmill.services.AuthenticationService;
-import io.windmill.windmill.services.NoAccountException;
-import io.windmill.windmill.services.NoSubscriptionException;
-import io.windmill.windmill.services.StorageServiceException;
 import io.windmill.windmill.services.SubscriptionService;
 import io.windmill.windmill.services.WindmillService;
+import io.windmill.windmill.services.exceptions.AccountServiceException;
+import io.windmill.windmill.services.exceptions.NoAccountException;
+import io.windmill.windmill.services.exceptions.NoSubscriptionException;
+import io.windmill.windmill.services.exceptions.StorageServiceException;
 import io.windmill.windmill.web.RequiresSubscriptionAccess;
 import io.windmill.windmill.web.common.FormDataMap;
 import io.windmill.windmill.web.common.UriBuilders;
@@ -96,7 +96,7 @@ public class AccountResource {
 
     	try {    	
     		Subscription subscription = 
-    				this.subscriptionService.subscription(account_identifier, UUID.fromString(claims.sub));
+    				this.subscriptionService.get(account_identifier, UUID.fromString(claims.sub));
 
     		subscription.setAccessedAt(Instant.now());
     		
@@ -139,7 +139,7 @@ public class AccountResource {
 
     	try {    	
     		Subscription subscription = 
-    				this.subscriptionService.subscription(account_identifier, UUID.fromString(claims.sub));
+    				this.subscriptionService.get(account_identifier, UUID.fromString(claims.sub));
 
     		subscription.setAccessedAt(Instant.now());
     		

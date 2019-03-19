@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import io.windmill.windmill.persistence.StatelessEntityManager;
 import io.windmill.windmill.persistence.WindmillEntityManager;
+import io.windmill.windmill.services.exceptions.ReceiptVerificationException;
 import junit.framework.Assert;
 
 

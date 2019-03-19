@@ -1,4 +1,7 @@
-package io.windmill.windmill.services;
+package io.windmill.windmill.services.exceptions;
+
+import io.windmill.windmill.services.AppStoreService;
+import io.windmill.windmill.services.AppStoreService.Status;
 
 public class ReceiptVerificationException extends Exception {
 

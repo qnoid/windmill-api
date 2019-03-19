@@ -24,19 +24,19 @@ import javax.ws.rs.core.Response.Status;
 
 import org.jboss.logging.Logger;
 
-import io.windmill.windmill.persistence.Account;
 import io.windmill.windmill.persistence.Subscription;
 import io.windmill.windmill.persistence.Subscription.Metadata;
 import io.windmill.windmill.persistence.web.Receipt;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
-import io.windmill.windmill.services.AppStoreServiceException;
+import io.windmill.windmill.persistence.web.CKUserRecord;
 import io.windmill.windmill.services.AuthenticationService;
-import io.windmill.windmill.services.AuthenticationServiceException;
-import io.windmill.windmill.services.NoRecoredTransactionsException;
-import io.windmill.windmill.services.NoSubscriptionException;
-import io.windmill.windmill.services.ReceiptVerificationException;
-import io.windmill.windmill.services.SubscriptionExpiredException;
 import io.windmill.windmill.services.SubscriptionService;
+import io.windmill.windmill.services.exceptions.AppStoreServiceException;
+import io.windmill.windmill.services.exceptions.AuthenticationServiceException;
+import io.windmill.windmill.services.exceptions.NoRecoredTransactionsException;
+import io.windmill.windmill.services.exceptions.NoSubscriptionException;
+import io.windmill.windmill.services.exceptions.ReceiptVerificationException;
+import io.windmill.windmill.services.exceptions.SubscriptionExpiredException;
 import io.windmill.windmill.web.RequiresSubscriptionClaim;
 import io.windmill.windmill.web.security.Claims;
 import io.windmill.windmill.web.security.JWT;
@@ -86,7 +86,7 @@ public class SubscriptionResource {
 			Claims<Subscription> claims = Claims.subscription(jwt);
 			
 			Subscription subscription = 
-					this.subscriptionService.subscription(account_identifier, UUID.fromString(claims.sub));			
+					this.subscriptionService.get(account_identifier, UUID.fromString(claims.sub));			
 			
 			this.subscriptionService.latest(subscription);
 			
@@ -130,10 +130,17 @@ public class SubscriptionResource {
     }
     
     /**
+     * Subscribes the user as to the subscription referred by the given claim.
+     * Will create a new account if the given user isn't already assigned to one.
+     *  
      * Does not make any guarantees that the subscription hasn't elapsed.
      * 
+     * An account is returned that can be used to refer back to the subscription.
+     * Calls to this endpoint for the same user identifier guarantee the same account identifier.
+     * 
+     * @param user, A JSON object `{"user_identifier":"[String]", "user_container":"[String]"}`
      * @param authorization
-     * @return A JSON object `{"access_token":"[JWT]"}` in case of a Status.OK.
+     * @return A JSON object `{"account_identifier":"[UUID]", "access_token":"[JWT]"}` in case of a Status.OK.
      * <ul> 
      *  <li> Status.OK </li>  
      *  <li> Status.UNAUTHORIZED When the given claim is invalid.</li>
@@ -146,25 +153,27 @@ public class SubscriptionResource {
     @Path("/")
     @Transactional
 	@RequiresSubscriptionClaim
-    public Response isSubscriber(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorization) {
+    public Response subscribe(final CKUserRecord user, @HeaderParam(HttpHeaders.AUTHORIZATION) String authorization) {
     	
     	try {    					
     		JWT<JWS> jwt = this.authenticationService.subscription(authorization);
 			
 			Claims<Subscription> claims = Claims.subscription(jwt);
 			
-			Subscription subscription = 
-					this.subscriptionService.subscription(UUID.fromString(claims.sub));			
+			Subscription subscription = this.subscriptionService.get(UUID.fromString(claims.sub)); 
+					
+			this.subscriptionService.subscribe(user, subscription);			
 			
 			if (subscription.hasExpired()) {
 				return Response.status(Status.UNAUTHORIZED).entity("expired").build();
 			}
 
 	    	SubscriptionAuthorizationToken subscriptionAuthorizationToken = this.authenticationService.authorizationToken(subscription);
-	    	
+	    		    	
 			JWT<JWS> accessToken = this.authenticationService.jwt(subscriptionAuthorizationToken);
 
 			JsonObject response = Json.createObjectBuilder()
+					.add("account_identifier", subscription.getAccount().getIdentifier().toString())					
 					.add("access_token", accessToken.toString())
 					.build();
 	
@@ -192,11 +201,11 @@ public class SubscriptionResource {
      * Creates a new subscription for a given valid receipt.
      * 
      * Subsequent calls to this endpoint with the same receipt is acceptable yet effectively a no-op. 
-     * The receipt is validated each time and an account is returned that can be used to refer back to the subscription.  
+     * The receipt is validated each time.  
      * 
      * </pre>
      * @param receipt a "valid" receipt, its data encoded in base64, as returned by the StoreKit. 
-     * @return A JSON object `{"account_identifier":"[UUID]", "claim":"[JWT]"}` in case of a Status.CREATED, Status.OK.
+     * @return A JSON object `{"claim":"[JWT]"}` in case of a Status.CREATED, Status.OK.
      * <ul> 
      * 	<li> Status.CREATED if a new subscription was created as a result of processing the receipt. </li> 
      *  <li> Status.OK otherwise. </li>  
@@ -224,13 +233,10 @@ public class SubscriptionResource {
 			if (subscription.hasExpired()) {
 				return Response.status(Status.NO_CONTENT).build();
 			}
-			
-			Account account = subscription.getAccount();
-						
+									
 			JWT<JWS> jwt = this.authenticationService.jwt(subscription);
 			
 			JsonObject response = Json.createObjectBuilder()
-					.add("account_identifier", account.getIdentifier().toString())
 					.add("claim", jwt.toString())
 					.build();
 			
