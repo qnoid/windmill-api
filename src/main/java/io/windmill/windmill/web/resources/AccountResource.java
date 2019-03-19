@@ -168,7 +168,7 @@ public class AccountResource {
 				LOGGER.warn(String.format("File at path '%s' could not be deleted.", file.toPath()), e);				
 			}
 			
-			return Response.seeOther(itms).build();
+			return Response.ok(itms).build();
     	}
     	catch(NoSuchElementException e) {
 			LOGGER.debug(String.format("No token present at Authorization: Bearer."));			
