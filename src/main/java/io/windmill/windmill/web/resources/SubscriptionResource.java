@@ -25,10 +25,11 @@ import javax.ws.rs.core.Response.Status;
 import org.jboss.logging.Logger;
 
 import io.windmill.windmill.persistence.Subscription;
+import io.windmill.windmill.persistence.Subscription.Fetch;
 import io.windmill.windmill.persistence.Subscription.Metadata;
+import io.windmill.windmill.persistence.web.CKUserRecord;
 import io.windmill.windmill.persistence.web.Receipt;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
-import io.windmill.windmill.persistence.web.CKUserRecord;
 import io.windmill.windmill.services.AuthenticationService;
 import io.windmill.windmill.services.SubscriptionService;
 import io.windmill.windmill.services.exceptions.AppStoreServiceException;
@@ -86,7 +87,7 @@ public class SubscriptionResource {
 			Claims<Subscription> claims = Claims.subscription(jwt);
 			
 			Subscription subscription = 
-					this.subscriptionService.get(account_identifier, UUID.fromString(claims.sub));			
+					this.subscriptionService.belongs(account_identifier, UUID.fromString(claims.sub), Fetch.TRANSACTION);			
 			
 			this.subscriptionService.latest(subscription);
 			
@@ -117,7 +118,6 @@ public class SubscriptionResource {
     		 * subscriptionService.latest(subscription)
     		 */
     		
-			LOGGER.debug(e.getMessage());			    		
     		return Response.status(Status.FORBIDDEN).build();
     	}
     	catch(SubscriptionExpiredException e) { //this.subscriptionService.latest(subscription);
@@ -160,7 +160,7 @@ public class SubscriptionResource {
 			
 			Claims<Subscription> claims = Claims.subscription(jwt);
 			
-			Subscription subscription = this.subscriptionService.get(UUID.fromString(claims.sub)); 
+			Subscription subscription = this.subscriptionService.find(UUID.fromString(claims.sub)); 
 					
 			this.subscriptionService.subscribe(user, subscription);			
 			

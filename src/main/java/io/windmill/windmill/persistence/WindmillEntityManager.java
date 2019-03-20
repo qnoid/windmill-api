@@ -3,6 +3,7 @@ package io.windmill.windmill.persistence;
 import java.util.List;
 
 import javax.ejb.EJBException;
+import javax.persistence.EntityGraph;
 import javax.persistence.NoResultException;
 
 import org.jboss.logging.Logger;
@@ -20,6 +21,8 @@ public interface WindmillEntityManager {
 	<T> List<T> getResultList(String name) throws EJBException;
 
 	<T> List<T> getResultList(String name, QueryConfiguration<List<T>> queryConfiguration) throws EJBException;
+
+	<T> EntityGraph<T> getEntityGraph(String graphName) throws EJBException;
 
     default <T> T findOrProvide(String name, QueryConfiguration<T> queryConfiguration, Provider<T> inCaseOfNoResultException) {
         try {
@@ -70,6 +73,11 @@ public interface WindmillEntityManager {
 			public <T> List<T> getResultList(String name, QueryConfiguration<List<T>> queryConfiguration)
 					throws EJBException {
 				return wem.getResultList(name, queryConfiguration);
+			}
+
+			@Override
+			public <T> EntityGraph<T> getEntityGraph(String graphName) throws EJBException {
+				return wem.getEntityGraph(graphName);
 			}
 		};
 	}

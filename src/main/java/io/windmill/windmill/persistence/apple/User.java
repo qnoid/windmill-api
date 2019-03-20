@@ -10,7 +10,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
@@ -20,8 +19,7 @@ import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 
 @Entity
 @Table(schema="apple",name="user")
-@NamedQueries({
-    @NamedQuery(name = "user.find_by_identifier", query = "SELECT u FROM User u WHERE u.identifier = :identifier")})
+@NamedQuery(name = "user.find_by_identifier", query = "SELECT u FROM User u WHERE u.identifier = :identifier")
 public class User {
 	
     @Id

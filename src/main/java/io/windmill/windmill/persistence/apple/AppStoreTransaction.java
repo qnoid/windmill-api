@@ -14,7 +14,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -25,8 +24,7 @@ import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 
 @Entity
 @Table(schema="apple",name="transaction")
-@NamedQueries({
-    @NamedQuery(name = "transaction.find_by_identifier", query = "SELECT t FROM AppStoreTransaction t WHERE t.identifier = :identifier")})
+@NamedQuery(name = "transaction.find_by_identifier", query = "SELECT t FROM AppStoreTransaction t WHERE t.identifier = :identifier")
 public class AppStoreTransaction {
 
     @Id

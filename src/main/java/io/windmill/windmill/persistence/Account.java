@@ -14,7 +14,6 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
@@ -23,9 +22,8 @@ import io.windmill.windmill.web.CustomJsonUUIDSerializer;
 import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 
 @Entity
-@NamedQueries({
-    @NamedQuery(name = "account.list", query = "SELECT a FROM Account a"),
-    @NamedQuery(name = "account.find_by_identifier", query = "SELECT a FROM Account a WHERE a.identifier = :identifier")})
+@NamedQuery(name = "account.list", query = "SELECT a FROM Account a")
+@NamedQuery(name = "account.find_by_identifier", query = "SELECT a FROM Account a WHERE a.identifier = :identifier")
 public class Account {
 
     @Id

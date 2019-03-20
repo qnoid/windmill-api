@@ -11,17 +11,15 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.validation.constraints.NotNull;
 
 import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 
 @Entity
-@NamedQueries({
-		@NamedQuery(name = "device.list", query = "SELECT d FROM Device d"),
-        @NamedQuery(name = "device.with_account_identifier", query = "SELECT d FROM Device d WHERE d.account.identifier = :account_identifier"),
-		@NamedQuery(name = "device.find_by_token", query = "SELECT d FROM Device d WHERE d.token = :token")})
+@NamedQuery(name = "device.list", query = "SELECT d FROM Device d")
+@NamedQuery(name = "device.with_account_identifier", query = "SELECT d FROM Device d WHERE d.account.identifier = :account_identifier")
+@NamedQuery(name = "device.find_by_token", query = "SELECT d FROM Device d WHERE d.token = :token")
 public class Device {
 	
     @Id

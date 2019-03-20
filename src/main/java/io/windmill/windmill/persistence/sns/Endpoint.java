@@ -12,7 +12,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -23,9 +22,8 @@ import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 
 @Entity
 @Table(schema="sns")
-@NamedQueries({
-    @NamedQuery(name = "endpoint.find_by_device_token", query = "SELECT e FROM Endpoint e WHERE e.device.token = :device_token"),
-    @NamedQuery(name = "endpoint.find_by_account_identifier", query = "SELECT e FROM Endpoint e JOIN e.device.account a WHERE a.identifier = :account_identifier")})
+@NamedQuery(name = "endpoint.find_by_device_token", query = "SELECT e FROM Endpoint e WHERE e.device.token = :device_token")
+@NamedQuery(name = "endpoint.find_by_account_identifier", query = "SELECT e FROM Endpoint e JOIN e.device.account a WHERE a.identifier = :account_identifier")
 public class Endpoint {
 	
     @Id

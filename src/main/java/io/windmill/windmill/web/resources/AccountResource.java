@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
@@ -39,11 +38,10 @@ import io.windmill.windmill.common.Manifest;
 import io.windmill.windmill.persistence.Account;
 import io.windmill.windmill.persistence.Device;
 import io.windmill.windmill.persistence.Export;
-import io.windmill.windmill.persistence.Subscription;
+import io.windmill.windmill.persistence.Subscription.Fetch;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
 import io.windmill.windmill.services.AccountService;
 import io.windmill.windmill.services.AuthenticationService;
-import io.windmill.windmill.services.SubscriptionService;
 import io.windmill.windmill.services.WindmillService;
 import io.windmill.windmill.services.exceptions.AccountServiceException;
 import io.windmill.windmill.services.exceptions.NoAccountException;
@@ -75,9 +73,6 @@ public class AccountResource {
     private AccountService accountService;
 
     @Inject
-    private SubscriptionService subscriptionService;
-
-    @Inject
     private AuthenticationService authenticationService;    
     
     public AccountResource() {
@@ -95,13 +90,11 @@ public class AccountResource {
 		Claims<SubscriptionAuthorizationToken> claims = Claims.accessToken(jwt);
 
     	try {    	
-    		Subscription subscription = 
-    				this.subscriptionService.get(account_identifier, UUID.fromString(claims.sub));
-
-    		subscription.setAccessedAt(Instant.now());
+    		Account account = 
+    				this.accountService.belongs(account_identifier, UUID.fromString(claims.sub), Fetch.EXPORTS);
     		
-    		Set<Export> exports = subscription.getAccount().getExports();
-      
+    		Set<Export> exports = account.getExports();
+          		
     		return Response.ok(exports).build();
     	}
     	catch(NoSuchElementException e) {
@@ -138,11 +131,9 @@ public class AccountResource {
 		Claims<SubscriptionAuthorizationToken> claims = Claims.accessToken(jwt);
 
     	try {    	
-    		Subscription subscription = 
-    				this.subscriptionService.get(account_identifier, UUID.fromString(claims.sub));
+    		Account account = 
+    				this.accountService.belongs(account_identifier, UUID.fromString(claims.sub));
 
-    		subscription.setAccessedAt(Instant.now());
-    		
     		FormDataMap formDataMap = FormDataMap.get(input);
     	
 			Manifest metadata = formDataMap.readManifest();
@@ -160,7 +151,7 @@ public class AccountResource {
 			
 			ByteArrayOutputStream byteArrayOutputStream = formDataMap.plistWithURLString(uri.toString());
 			
-			URI itms = windmillService.updateOrCreate(subscription.getAccount(), metadata, file, byteArrayOutputStream);
+			URI itms = windmillService.updateOrCreate(account, metadata, file, byteArrayOutputStream);
 			
 			try {
 				Files.delete(file.toPath());

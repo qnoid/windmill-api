@@ -8,12 +8,15 @@ import javax.json.bind.annotation.JsonbTypeSerializer;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
+import javax.persistence.NamedAttributeNode;
+import javax.persistence.NamedEntityGraph;
 import javax.persistence.NamedQuery;
+import javax.persistence.NamedSubgraph;
 import javax.persistence.OneToOne;
 import javax.validation.constraints.NotNull;
 
@@ -22,16 +25,34 @@ import io.windmill.windmill.web.CustomJsonUUIDSerializer;
 import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 
 @Entity
-@NamedQueries({
-    @NamedQuery(name = "subscription.find_by_identifier", query = "SELECT s FROM Subscription s WHERE s.identifier = :identifier"),	
-    @NamedQuery(name = "subscription.belongs_to_account_identifier", query = "SELECT s FROM Subscription s WHERE s.account.identifier = :account_identifier AND s.identifier = :identifier")})
+@NamedQuery(name = "subscription.find_by_identifier", query = "SELECT s FROM Subscription s WHERE s.identifier = :identifier")
+@NamedQuery(name = "subscription.belongs_to_account_identifier", query = "SELECT s FROM Subscription s WHERE s.account.identifier = :account_identifier AND s.identifier = :identifier")
+@NamedEntityGraph(name = "subscription.exports", 
+	attributeNodes = @NamedAttributeNode(value = "account", subgraph = "account"), 
+	subgraphs = @NamedSubgraph(name = "account", attributeNodes = @NamedAttributeNode("exports")))
+@NamedEntityGraph(name = "subscription.transaction", attributeNodes = @NamedAttributeNode(value = "transaction"))
 public class Subscription {
 
 	public enum Metadata {		
-		WAS_CREATED,
+		WAS_CREATED
 	}
 	
-    @Id
+	public enum Fetch {
+		EXPORTS("subscription.exports"),
+		TRANSACTION("subscription.transaction");
+		
+		private String entityGraph;
+	
+		private Fetch(String entityGraph) {
+			this.entityGraph = entityGraph;
+		}
+	
+		public String getEntityGraph() {
+			return entityGraph;
+		}
+	}
+
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -51,7 +72,7 @@ public class Subscription {
     @ManyToOne(cascade = CascadeType.PERSIST)
     Account account;
 
-    @OneToOne(mappedBy="subscription")
+    @OneToOne(mappedBy="subscription", fetch=FetchType.LAZY)
     @NotNull
     AppStoreTransaction transaction;
     

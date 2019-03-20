@@ -14,6 +14,7 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.persistence.EntityGraph;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.validation.constraints.NotNull;
@@ -22,16 +23,16 @@ import org.jboss.logging.Logger;
 
 import io.windmill.windmill.apple.AppStoreConnect.Bundle;
 import io.windmill.windmill.apple.AppStoreConnect.Product;
-import io.windmill.windmill.persistence.Extended;
 import io.windmill.windmill.persistence.Provider;
 import io.windmill.windmill.persistence.QueryConfiguration;
 import io.windmill.windmill.persistence.Subscription;
+import io.windmill.windmill.persistence.Subscription.Fetch;
 import io.windmill.windmill.persistence.Subscription.Metadata;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.persistence.apple.AppStoreTransaction;
 import io.windmill.windmill.persistence.apple.User;
-import io.windmill.windmill.persistence.web.Receipt;
 import io.windmill.windmill.persistence.web.CKUserRecord;
+import io.windmill.windmill.persistence.web.Receipt;
 import io.windmill.windmill.services.AppStoreService.InAppPurchaseReceipt;
 import io.windmill.windmill.services.AppStoreService.LatestReceipt;
 import io.windmill.windmill.services.exceptions.NoRecoredTransactionsException;
@@ -44,7 +45,7 @@ public class SubscriptionService {
 
 	public static final Logger LOGGER = Logger.getLogger(SubscriptionService.class);
 	
-    @Inject @Extended
+    @Inject
     private WindmillEntityManager entityManager;
 
     @Inject
@@ -123,7 +124,7 @@ public class SubscriptionService {
 			AppStoreTransaction appStoreTransaction = this.entityManager.getSingleResult("transaction.find_by_identifier", identitifier(transaction_identifier));	
 		
 			appStoreTransaction.setReceipt(receipt);
-			appStoreTransaction.setExpiresAt(expiresAt); //should it update only when its the later than the current or not?
+			appStoreTransaction.setExpiresAt(expiresAt);
 			appStoreTransaction.setModifiedAt(Instant.now());
 		
 			return appStoreTransaction.getSubscription();
@@ -198,27 +199,42 @@ public class SubscriptionService {
 		guard(subscription.isActive(), () -> new SubscriptionExpiredException());
 	}
 
-	public Subscription get(UUID account_identifier, UUID subscription_identifier) throws NoSubscriptionException {
-		
-		try {
-			
-			Subscription subscription = this.entityManager.getSingleResult("subscription.belongs_to_account_identifier", new QueryConfiguration<Subscription>() {
+	public Subscription belongs(UUID account_identifier, UUID subscription_identifier) throws NoSubscriptionException {		
+		return belongs(account_identifier, subscription_identifier, QueryConfiguration.empty());		
+	}
 
+	public Subscription belongs(UUID account_identifier, UUID subscription_identifier, Fetch fetch) throws NoSubscriptionException {		
+		return belongs(account_identifier, subscription_identifier, new QueryConfiguration<Subscription>() {
+
+			@Override
+			public @NotNull Query apply(Query query) {
+				EntityGraph<Subscription> graph = entityManager.getEntityGraph(fetch.getEntityGraph());				
+				return query.setHint("javax.persistence.fetchgraph", graph);
+			}
+		});		
+	}
+
+	private Subscription belongs(UUID account_identifier, UUID subscription_identifier, QueryConfiguration<Subscription> queryConfiguration) {
+		try {
+						
+			Subscription subscription = this.entityManager.getSingleResult("subscription.belongs_to_account_identifier", new QueryConfiguration<Subscription>() {
+		
 				@Override
 				public @NotNull Query apply(Query query) {
 					query.setParameter("identifier", subscription_identifier);
-					query.setParameter("account_identifier", account_identifier);				
-					return query;
+					query.setParameter("account_identifier", account_identifier);
+					
+					return queryConfiguration.apply(query);
 				}
 			});
 			
 			return subscription;
 		} catch (NoResultException e) {
 			throw new NoSubscriptionException("A subscription does not exist for the given account.");
-		}		
+		}
 	}
 	
-	public Subscription get(UUID subscription_identifier) throws NoSubscriptionException {
+	public Subscription find(UUID subscription_identifier) throws NoSubscriptionException {
 		
 		try {			
 			return this.entityManager.getSingleResult("subscription.find_by_identifier", identitifier(subscription_identifier));
@@ -226,7 +242,7 @@ public class SubscriptionService {
 			throw new NoSubscriptionException("A subscription does not exist with the given identifier.");
 		}		
 	}
-
+	
 	public void subscribe(CKUserRecord userRecord, Subscription subscription) {
 		
 		User user = this.entityManager.findOrProvide("user.find_by_identifier", identitifier(userRecord.getIdentifier()), new Provider<User>() {

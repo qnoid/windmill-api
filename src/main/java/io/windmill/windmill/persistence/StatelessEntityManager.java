@@ -5,6 +5,7 @@ import java.util.List;
 import javax.ejb.EJBException;
 import javax.ejb.Stateless;
 import javax.enterprise.inject.Default;
+import javax.persistence.EntityGraph;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -49,5 +50,11 @@ public class StatelessEntityManager implements WindmillEntityManager {
 	@Override
 	public <T> T merge(T obj) throws EJBException {
 		return this.em.merge(obj);
+	}
+	
+	@Override
+	@SuppressWarnings("unchecked")
+	public <T> EntityGraph<T> getEntityGraph(String graphName) throws EJBException {
+		return (EntityGraph<T>) this.em.getEntityGraph(graphName);
 	}
 }
