@@ -36,7 +36,8 @@ public class AppStoreConnect {
 
 	public enum Product {
 		
-		INDIVIDUAL_MONTHLY("io.windmill.windmill.individual_monthly");
+		INDIVIDUAL_MONTHLY("io.windmill.windmill.individual_monthly"),
+		DISTRIBUTION_MONTHLY("io.windmill.windmill.distribution_monthly");
 		
 	    private final String identifier;
 		public static final Predicate<JsonValue> KNOWN_PRODUCT = new Predicate<JsonValue>() {
