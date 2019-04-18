@@ -2,13 +2,14 @@
 package io.windmill.windmill.persistence;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbTransient;
 import javax.json.bind.annotation.JsonbTypeAdapter;
+import javax.json.bind.annotation.JsonbTypeSerializer;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -19,23 +20,57 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriBuilderException;
 
+import io.windmill.windmill.web.CustomJsonUUIDSerializer;
 import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
-import io.windmill.windmill.web.common.UriBuilders;
+import io.windmill.windmill.web.ManifestJsonbSerializer;
 
 @Entity
 @NamedQuery(name = "export.with_account_identifier", query = "SELECT e FROM Export e WHERE e.account.identifier = :account_identifier ORDER BY e.title ASC")
+@NamedQuery(name = "export.belongs_to_account_identifier", query = "SELECT e FROM Export e WHERE e.account.identifier = :account_identifier AND e.identifier = :identifier")
 @NamedQuery(name = "export.find_by_identifier", query = "SELECT e FROM Export e WHERE e.identifier = :identifier")
+@NamedQuery(name = "export.find_by_bundle", query = "SELECT e FROM Export e WHERE e.bundle = :bundle")
 public class Export {
 	
+    public static class Manifest {
+    	
+    	final private String name = "manifest.plist";
+        private Export export;
+        
+    	public Manifest(Export export) {
+			this.export = export;
+		}
+
+    	/**
+    	 * 
+    	 * @return the path where the manifest is actually available to download from
+    	 */
+		public URI path() {
+			return this.getExport()
+					.location()
+    				.path(this.name)
+    				.build();
+    	}
+
+		public Export getExport() {
+			return export;
+		}
+
+		public void setExport(Export export) {
+			this.export = export;
+		}
+    }
+    
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique=true)
     @NotNull
-    private String identifier;
+    private UUID identifier;
+
+    @NotNull
+    private String bundle;
 
 	@NotNull
     private Double version;
@@ -47,6 +82,10 @@ public class Export {
     @NotNull
     private Instant createdAt;
 
+    @Column(name="accessed_at")
+    @NotNull
+    private Instant accessedAt;
+
     @Column(name="modified_at")
     private Instant modifiedAt;
 
@@ -56,14 +95,14 @@ public class Export {
     public Account account;
     
     @Transient
-    @JsonbProperty("url")
-	private String URL;
-    
+	private Manifest manifest;
+
     /**
      * 
      */
     public Export()
     {
+    	this.identifier = UUID.randomUUID();
     	this.account = new Account();
         this.createdAt = Instant.now();
     }
@@ -71,15 +110,21 @@ public class Export {
     /**
      * 
      */
-    public Export(String identifier, Double version, String title)
+    public Export(String bundle, Double version, String title)
     {
-      this.identifier = identifier;
-      this.version = version;
-      this.title = title;
-      this.createdAt = Instant.now();
+    	this.identifier = UUID.randomUUID();    	
+    	this.bundle = bundle;
+    	this.version = version;
+    	this.title = title;
+    	this.createdAt = Instant.now();
     }
         
-    
+	private UriBuilder location() {
+		return UriBuilder.fromPath(this.getAccount().getIdentifier().toString())
+				.path(this.getIdentifier().toString())
+				.path("export");
+	}
+
     public Long getId() {
 		return id;
 	}
@@ -88,12 +133,22 @@ public class Export {
 		this.id = id;
 	}
 
-	public String getIdentifier() {
+	
+	@JsonbTypeSerializer(CustomJsonUUIDSerializer.class)
+	public @NotNull UUID getIdentifier() {
 		return identifier;
 	}
 
-	public void setIdentifier(String identifier) {
+	public void setIdentifier(@NotNull UUID identifier) {
 		this.identifier = identifier;
+	}
+
+	public String getBundle() {
+		return bundle;
+	}
+
+	public void setBundle(String bundle) {
+		this.bundle = bundle;
 	}
 
 	public Double getVersion() {
@@ -122,6 +177,15 @@ public class Export {
 	}
 	
 	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
+	public Instant getAccessedAt() {
+		return accessedAt;
+	}
+
+	public void setAccessedAt(Instant accessedAt) {
+		this.accessedAt = accessedAt;
+	}
+
+	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
 	public Instant getModifiedAt() {
 		return modifiedAt;
 	}
@@ -141,33 +205,33 @@ public class Export {
 	public boolean hasAccount(Account that) {
 		return Optional.ofNullable(this.account).filter(account -> account.equals(that)).isPresent();
 	}
-	
-	public void setURL(String URL) {
-		this.URL = URL;
-	}
 
-	public String getURL() {
-		URI path = UriBuilder.fromPath(this.account.getIdentifier().toString())
-				.path(this.identifier)
-				.path(String.valueOf(this.version))
-				.path(this.title)
+	public URI path() {
+		return this.location()
+				.path(String.format("%s.ipa", this.title))
 				.build();
-				
-		try {
-			return UriBuilders.createITMS(String.format("%s.plist", path));
-		} catch (IllegalArgumentException | UriBuilderException | URISyntaxException e) {
-			throw new RuntimeException(e);
-		}
 	}
 
+	/**
+	 * 
+	 * @return a URL, pointing to the manifest where this Export can be installed from using the `itms-services://?action=download-manifest&url=` notation.
+	 * the URL must be accessible in such a way that an iOS device can install it by simply issuing a GET to this URL.
+	 * 
+	 * No headers or query parameters should be required to install the Export using this URL. Neither is supported by iOS in its handling of `itms-services` links. 
+	 */
+	@JsonbProperty("url")
+	@JsonbTypeSerializer(ManifestJsonbSerializer.class)
+	public Manifest getManifest() {
+		return new Manifest(this);
+	}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((this.identifier == null) ? 0 : this.identifier.hashCode());
-		result = prime * result + ((this.version == null) ? 0 : this.version.hashCode());
-		result = prime * result + ((this.title == null) ? 0 : this.title.hashCode());
+		result = prime * result + ((identifier == null) ? 0 : identifier.hashCode());
 		return result;
+
 	}
 
 	@Override
@@ -180,13 +244,11 @@ public class Export {
 		
 		Export export = (Export) that;
 		
-		return this.identifier.equals(export.identifier) && 
-				this.version.equals(export.version) && 
-				this.title.equals(export.title);
+		return this.identifier.equals(export.identifier);
 	}
 	
 	@Override
 	public String toString() {
-		return String.format("{identifier:%s, title:%s, version:%s}", this.identifier, this.title, this.version);
+		return String.format("{identifier:%s, title:%s, version:%s}", this.bundle, this.title, this.version);
 	}
 }

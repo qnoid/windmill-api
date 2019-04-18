@@ -7,11 +7,12 @@ import java.time.Instant;
 
 import org.junit.Test;
 
-import io.windmill.windmill.web.resources.InvalidClaimException;
-import io.windmill.windmill.web.resources.InvalidSignatureException;
+import io.windmill.windmill.services.exceptions.InvalidClaimException;
+import io.windmill.windmill.services.exceptions.InvalidSignatureException;
 import io.windmill.windmill.web.security.Claim;
 import io.windmill.windmill.web.security.Claims;
 import io.windmill.windmill.web.security.JWT;
+import io.windmill.windmill.web.security.JWT.Header;
 import io.windmill.windmill.web.security.JWT.JWS;
 import io.windmill.windmill.web.security.MacAlgorithm;
 import junit.framework.Assert;
@@ -54,7 +55,7 @@ public class ClaimTest {
 		JWT<JWS> jwt = JWT.jws(token);
 		
 		Claim claim = Claim.create(key, MacAlgorithm.HMAC_SHA256).get();
-		claim.validate(jwt);
+		claim.validate(jwt, Header.Type.JWT);
 		
 		Assert.assertTrue(true);
 	}
@@ -70,7 +71,7 @@ public class ClaimTest {
 		JWT<JWS> jwt = JWT.jws(token);
 		
 		Claim claim = Claim.create(key, MacAlgorithm.HMAC_SHA256).get();
-		claim.validate(jwt);
+		claim.validate(jwt, Header.Type.JWT);
 	}
 	
 	@Test(expected=InvalidClaimException.class)
@@ -81,7 +82,7 @@ public class ClaimTest {
 				
 		JWT<JWS> jws = new JWT<JWS>(encodedHeader, encodedPayload, encodedSignature);
 		
-		Claim.create(key).validate(jws);
+		Claim.create(key).validate(jws, Header.Type.JWT);
 	}
 
 	@Test(expected=InvalidClaimException.class)
@@ -91,7 +92,7 @@ public class ClaimTest {
 		JWT<JWS> jwt = JWT.jws(token);
 		
 		Claim claim = Claim.create(key, MacAlgorithm.HMAC_SHA256).get();
-		claim.validate(jwt);
+		claim.validate(jwt, Header.Type.JWT);
 	}
 
 	@Test(expected=InvalidClaimException.class)
@@ -101,7 +102,7 @@ public class ClaimTest {
 		JWT<JWS> jwt = JWT.jws(token);
 		
 		Claim claim = Claim.create(key, MacAlgorithm.HMAC_SHA256).get();
-		claim.validate(jwt);
+		claim.validate(jwt, Header.Type.JWT);
 	}
 	
 	@Test(expected=InvalidClaimException.class)
@@ -111,7 +112,7 @@ public class ClaimTest {
 		JWT<JWS> jwt = JWT.jws(token);
 		
 		Claim claim = Claim.create(key, MacAlgorithm.HMAC_SHA256).get();
-		claim.validate(jwt);
+		claim.validate(jwt, Header.Type.JWT);
 	}
 	
 	@Test(expected=InvalidClaimException.class)
@@ -119,6 +120,6 @@ public class ClaimTest {
 		JWT<JWS> jwt = JWT.jws(null);
 		
 		Claim claim = Claim.create(key, MacAlgorithm.HMAC_SHA256).get();
-		claim.validate(jwt);
+		claim.validate(jwt, Header.Type.JWT);
 	}
 }

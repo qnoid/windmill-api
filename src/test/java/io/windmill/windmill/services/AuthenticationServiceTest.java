@@ -26,7 +26,7 @@ public class AuthenticationServiceTest {
 				+ "."
 				+ "iv35S2pp2jQh1JmVgfG0Wt1WUUEkRhMKVPmMXsH7lN4";
 		
-		JWT<JWS> jwt = authenticationService.subscription(authorization);
+		JWT<JWS> jwt = authenticationService.bearer(authorization);
 		
 		Assert.assertNotNull(jwt);
 		Assert.assertEquals("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", jwt.getHeader());
@@ -40,7 +40,7 @@ public class AuthenticationServiceTest {
 		
 		String emptyBearer = "Bearer";
 		
-		authenticationService.subscription(emptyBearer);		
+		authenticationService.bearer(emptyBearer);		
 	}
 
 	@Test(expected=NoSuchElementException.class)
@@ -49,7 +49,7 @@ public class AuthenticationServiceTest {
 		
 		String noBearerPrefix = "token";
 		
-		authenticationService.subscription(noBearerPrefix);
+		authenticationService.bearer(noBearerPrefix);
 	}
 	
 	@Test
@@ -58,7 +58,7 @@ public class AuthenticationServiceTest {
 		
 		String emptyBearer = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjU1RkQyQUMzLTdERTItNEM2Ny1CMEY4LTc5RTdDRkEwMjBDMiIsImV4cCI6MTU1MTM3MDAwNCwidHlwIjoiYXQiLCJ2IjoxfQ.WrRdH8jS8oRNdGFe5ki8Bn2qiiqXaIjtfo2WJe74bV4";
 		
-		JWT<JWS> jwt = authenticationService.token(emptyBearer);
+		JWT<JWS> jwt = authenticationService.bearer(emptyBearer);
 		
 		Claims<SubscriptionAuthorizationToken> claims = Claims.accessToken(jwt);
 		
@@ -78,7 +78,7 @@ public class AuthenticationServiceTest {
 		
 		String emptyBearer = "Bearer";
 		
-		authenticationService.token(emptyBearer);		
+		authenticationService.bearer(emptyBearer);		
 	}
 
 	@Test(expected=NoSuchElementException.class)
@@ -87,7 +87,7 @@ public class AuthenticationServiceTest {
 		
 		String noBearerPrefix = "token";
 		
-		authenticationService.token(noBearerPrefix);
+		authenticationService.bearer(noBearerPrefix);
 	}
 
 }

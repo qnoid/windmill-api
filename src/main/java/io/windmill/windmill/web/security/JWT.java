@@ -3,7 +3,7 @@ package io.windmill.windmill.web.security;
 
 import java.util.Optional;
 
-import io.windmill.windmill.web.resources.InvalidClaimException;
+import io.windmill.windmill.services.exceptions.InvalidClaimException;
 
 /** 
  * A JWT in its encoded format. This class does not make any assumptions as to whether a JWT is a valid one.
@@ -11,7 +11,7 @@ import io.windmill.windmill.web.resources.InvalidClaimException;
  * @param <T> the type of the JWT 
  * @see JWT.Type
  * @see JWT#jws(String) to make a jew JWS token
- * @see Claim#validate(JWT) on validating a JWT token.
+ * @see Claim#validate(JWT, Type) on validating a JWT token.
  */
 public class JWT<T extends JWT.Type> {
 	
@@ -66,7 +66,7 @@ public class JWT<T extends JWT.Type> {
 		String[] segments = jwt.split("\\.");
 		
 		if (segments.length != 3) {
-			throw new InvalidClaimException("JWT is not of unsupported type.");
+			throw new InvalidClaimException("JWT is not of supported type.");
 		}		
 		
 		String encodedHeader = segments[0];

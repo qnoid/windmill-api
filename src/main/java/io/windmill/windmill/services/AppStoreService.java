@@ -25,6 +25,7 @@ import org.jboss.logging.Logger;
 import io.windmill.windmill.persistence.apple.AppStoreTransaction;
 import io.windmill.windmill.services.exceptions.AppStoreServiceException;
 import io.windmill.windmill.services.exceptions.NoRecoredTransactionsException;
+import io.windmill.windmill.services.exceptions.NoSubscriptionException;
 import io.windmill.windmill.services.exceptions.ReceiptVerificationException;
 
 @ApplicationScoped
@@ -115,18 +116,20 @@ public class AppStoreService {
 	interface LatestReceipt {
 		
 		/**
-		 * The transactions are guaranteed to originate from a valid receipt.
+		 * Process the latest receipt information.
+		 * This call should only be called for an existing original transaction on record. 
 		 * 
-		 * @param transactions 
+		 * @param transactions The transactions are guaranteed to originate from a valid receipt. 
 		 *  
 		 * @return
 		 * @throws ReceiptVerificationException in case no transaction exists with a known `product_id` 
 		 * @throws NoRecoredTransactionsException in case of no transactions 
+		 * @throws NoSubscriptionException in case no subscription exists for the original transaction
 		 */
-		public AppStoreTransaction process(JsonArray transactions) throws ReceiptVerificationException, NoRecoredTransactionsException;
+		public AppStoreTransaction process(JsonArray transactions) throws ReceiptVerificationException, NoRecoredTransactionsException, NoSubscriptionException;
 	}
 
-	public AppStoreTransaction latest(String receiptData, LatestReceipt receipt) throws ReceiptVerificationException, NoRecoredTransactionsException 
+	public AppStoreTransaction latest(String receiptData, LatestReceipt receipt) throws ReceiptVerificationException, NoRecoredTransactionsException, NoSubscriptionException 
 	{
 		JsonObject json = this.verify(receiptData);
 

@@ -5,7 +5,7 @@ import java.security.InvalidKeyException;
 
 import org.junit.Test;
 
-import io.windmill.windmill.web.resources.InvalidClaimException;
+import io.windmill.windmill.services.exceptions.InvalidClaimException;
 import io.windmill.windmill.web.security.JWT;
 import junit.framework.Assert;
 

@@ -1,4 +1,4 @@
-package io.windmill.windmill.web.resources;
+package io.windmill.windmill.web;
 
 import javax.enterprise.context.Dependent;
 import javax.json.bind.JsonbException;

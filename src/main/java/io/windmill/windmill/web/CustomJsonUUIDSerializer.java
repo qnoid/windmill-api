@@ -11,8 +11,7 @@ public class CustomJsonUUIDSerializer implements JsonbSerializer<UUID>
 
 	@Override
 	public void serialize(UUID obj, JsonGenerator generator, SerializationContext ctx) {
-		generator.write(obj.toString());
-		
+		generator.write(obj.toString());	
 	}
 
 }

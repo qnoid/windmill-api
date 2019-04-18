@@ -12,9 +12,10 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 
+import io.windmill.windmill.persistence.Export;
 import io.windmill.windmill.persistence.Subscription;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
-import io.windmill.windmill.web.resources.InvalidClaimException;
+import io.windmill.windmill.services.exceptions.InvalidClaimException;
 import io.windmill.windmill.web.security.JWT.JWS;
 
 public class Claims<T> {
@@ -22,7 +23,8 @@ public class Claims<T> {
 	public static enum Type {
 		
 		SUBSCRIPTION("sub"),
-		ACCESS_TOKEN("at");
+		ACCESS_TOKEN("at"),
+		EXPORT("exp");
 		
 		public static Optional<Type> of(String value) {
 	        for (Type t : Type.values()) {
@@ -61,6 +63,10 @@ public class Claims<T> {
 	}
 	
 	public static Claims<SubscriptionAuthorizationToken> accessToken(JWT<JWS> jwt) throws InvalidClaimException {		
+		return make(jwt);
+	}
+
+	public static Claims<Export> export(JWT<JWS> jwt) throws InvalidClaimException {		
 		return make(jwt);
 	}
 

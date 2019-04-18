@@ -30,7 +30,7 @@ public class Manifest {
 	}
 	
     @NotNull
-    private String identifier;
+    private String bundle;
 
 	@NotNull
     private Double version;
@@ -38,14 +38,14 @@ public class Manifest {
     @NotNull
     private String title;
 
-	public Manifest(String identifier, Double version, String title) {
-		this.identifier = identifier;
+	public Manifest(String bundle, Double version, String title) {
+		this.bundle = bundle;
 		this.version = version;
 		this.title = title;
 	}
 
-	public String getIdentifier() {
-		return identifier;
+	public String getBundle() {
+		return bundle;
 	}
 
 	public Double getVersion() {
@@ -66,7 +66,7 @@ public class Manifest {
 	 */
 	public File copy(String account_identifier, InputStream ipaStream) throws IOException {
 		
-		Path path = Paths.get("/tmp", account_identifier, identifier, String.valueOf(version));
+		Path path = Paths.get("/tmp", account_identifier, bundle, String.valueOf(version));
 		Files.createDirectories(path);
 		File file = new File(path.toFile(), String.format("%s.ipa", title));
 		

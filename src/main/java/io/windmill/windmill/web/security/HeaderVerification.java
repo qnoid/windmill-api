@@ -11,7 +11,7 @@ import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
 
 import io.windmill.windmill.common.Guard;
-import io.windmill.windmill.web.resources.InvalidClaimException;
+import io.windmill.windmill.services.exceptions.InvalidClaimException;
 import io.windmill.windmill.web.security.JWT.Header;
 
 public interface HeaderVerification<T extends JWT.Type> extends InvalidClaimGuard, JWTVerification<T> {

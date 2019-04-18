@@ -51,7 +51,7 @@ public class FormDataMap {
 		InputStream stream = this.read("ipa");
 		
 		try {
-			Path path = Paths.get("/tmp", account_identifier, manifest.getIdentifier(), String.valueOf(manifest.getVersion()));
+			Path path = Paths.get("/tmp", account_identifier, manifest.getBundle(), String.valueOf(manifest.getVersion()));
 			Files.createDirectories(path);
 			File file = new File(path.toFile(), String.format("%s.ipa", manifest.getTitle()));
 			

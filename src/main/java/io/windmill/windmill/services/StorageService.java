@@ -46,6 +46,6 @@ public class StorageService {
     void upload(InputStream inputStream, String objectKey, ObjectMetadata objectMetadata) throws AmazonServiceException, AmazonClientException, InterruptedException {
         Upload upload = transferManager.upload(BUCKET_CANONICAL_NAME, objectKey, inputStream, objectMetadata);
         upload.waitForCompletion();
-        LOGGER.info(String.format("Upload of '%s' complete.", objectKey));
+        LOGGER.info(String.format("Upload of '%s' %s.", objectKey, upload.getState()));
     }
 }
