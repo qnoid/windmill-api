@@ -1,12 +1,15 @@
 package io.windmill.windmill.web.resources;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.security.spec.InvalidKeySpecException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
@@ -26,7 +29,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
 
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.jboss.logging.Logger;
@@ -42,14 +44,19 @@ import io.windmill.windmill.persistence.Subscription.Fetch;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
 import io.windmill.windmill.services.AccountService;
 import io.windmill.windmill.services.AuthenticationService;
+import io.windmill.windmill.services.ExportService;
 import io.windmill.windmill.services.WindmillService;
 import io.windmill.windmill.services.exceptions.AccountServiceException;
+import io.windmill.windmill.services.exceptions.ExportGoneException;
+import io.windmill.windmill.services.exceptions.InvalidClaimException;
+import io.windmill.windmill.services.exceptions.InvalidSignatureException;
 import io.windmill.windmill.services.exceptions.NoAccountException;
 import io.windmill.windmill.services.exceptions.NoSubscriptionException;
 import io.windmill.windmill.services.exceptions.StorageServiceException;
-import io.windmill.windmill.web.RequiresSubscriptionAccess;
+import io.windmill.windmill.services.exceptions.UnauthorizedAccountAccessException;
+import io.windmill.windmill.services.exceptions.UnauthorizedAccountAccessException.Messages;
+import io.windmill.windmill.web.RequiresSubscriptionAuthorizationToken;
 import io.windmill.windmill.web.common.FormDataMap;
-import io.windmill.windmill.web.common.UriBuilders;
 import io.windmill.windmill.web.security.Claims;
 import io.windmill.windmill.web.security.JWT;
 import io.windmill.windmill.web.security.JWT.JWS;
@@ -73,6 +80,9 @@ public class AccountResource {
     private AccountService accountService;
 
     @Inject
+    private ExportService exportService;
+
+    @Inject
     private AuthenticationService authenticationService;    
     
     public AccountResource() {
@@ -81,11 +91,11 @@ public class AccountResource {
     @GET
     @Path("/{account}/exports")
     @Produces(MediaType.APPLICATION_JSON)    
-    @RequiresSubscriptionAccess
+    @RequiresSubscriptionAuthorizationToken
     @Transactional
     public Response exports(@PathParam("account") final UUID account_identifier, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
 
-		JWT<JWS> jwt = this.authenticationService.token(authorization);
+		JWT<JWS> jwt = this.authenticationService.bearer(authorization);
     	
 		Claims<SubscriptionAuthorizationToken> claims = Claims.accessToken(jwt);
 
@@ -94,21 +104,52 @@ public class AccountResource {
     				this.accountService.belongs(account_identifier, UUID.fromString(claims.sub), Fetch.EXPORTS);
     		
     		Set<Export> exports = account.getExports();
-          		
-    		return Response.ok(exports).build();
+          	
+			return Response.ok(exports).build();
     	}
     	catch(NoSuchElementException e) {
 			LOGGER.debug(String.format("No token present at Authorization: Bearer."));			
 			return Response.status(Status.BAD_REQUEST).build();    		
     	}    	    	
     	catch (NoSubscriptionException e) {
-    		throw new UnauthorizedAccountAccessException(String.format("Unauthorized acccess attempted for account '%s' using claim '%s'.", account_identifier, claims), e);
+    		throw new UnauthorizedAccountAccessException(Messages.unauthorized(account_identifier, claims), e);
     	}
-    	catch(IllegalArgumentException e) { //UUID.fromString
+    	catch(IllegalArgumentException | InvalidClaimException e) { //UUID.fromString
 			return Response.status(Status.UNAUTHORIZED).build();
-        }    	    	    	
+        }    	
     }
 
+	@GET
+    @Path("/{account}/export/{authorization}")
+    @Produces(MediaType.TEXT_XML)
+    @Transactional
+    public Response export(@PathParam("account") final UUID account_identifier, @PathParam("authorization") final String authorization) {
+
+    	try {
+			Claims<Export> claims = this.authenticationService.isExport(authorization);
+			
+    		Export export = this.exportService.belongs(account_identifier, UUID.fromString(claims.sub));
+    		export.setAccessedAt(Instant.now());
+    		          		
+			Instant fifteenMinutesFromNow = Instant.now().plus(Duration.ofMinutes(15));
+			
+			URI url = this.authenticationService.export(export, fifteenMinutesFromNow);
+
+			return Response.seeOther(url).build();
+    	}
+    	catch (ExportGoneException e) {
+			LOGGER.debug(e.getMessage());			    		
+    		return Response.status(Status.GONE).build();
+    	}
+    	catch(NoSuchElementException | UnsupportedEncodingException | IllegalArgumentException | InvalidSignatureException | InvalidClaimException e) { //UUID.fromString
+			LOGGER.debug(e.getMessage());			    		    		
+			return Response.status(Status.UNAUTHORIZED).build();
+    	} catch (InvalidKeySpecException | IOException e ) {
+			LOGGER.error(e.getMessage(), e.getCause());
+			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+		}    	
+    }
+	
     /**
      * 
      * @precondition the account <b>must</b> exist 
@@ -123,14 +164,14 @@ public class AccountResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Transactional
-    @RequiresSubscriptionAccess
-    public Response create(@PathParam("account") final UUID account_identifier, final MultipartFormDataInput input, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
+    @RequiresSubscriptionAuthorizationToken
+    public Response export(@PathParam("account") final UUID account_identifier, final MultipartFormDataInput input, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
 
-		JWT<JWS> jwt = this.authenticationService.token(authorization);
+		JWT<JWS> jwt = this.authenticationService.bearer(authorization);
     	
 		Claims<SubscriptionAuthorizationToken> claims = Claims.accessToken(jwt);
-
-    	try {    	
+		
+    	try {
     		Account account = 
     				this.accountService.belongs(account_identifier, UUID.fromString(claims.sub));
 
@@ -139,20 +180,8 @@ public class AccountResource {
 			Manifest metadata = formDataMap.readManifest();
 			File file = formDataMap.cacheIPA(account_identifier.toString(), metadata);
 			
-			URI path = UriBuilder.fromPath(account_identifier.toString())
-					.path(metadata.getIdentifier())
-					.path(String.valueOf(metadata.getVersion()))
-					.path(metadata.getTitle())
-					.build();
-			
-			URI uri = UriBuilders.create(String.format("%s.ipa", path)).build();
-			
-			LOGGER.debug(String.format("URL for plist will be %s", uri));
-			
-			ByteArrayOutputStream byteArrayOutputStream = formDataMap.plistWithURLString(uri.toString());
-			
-			URI itms = windmillService.updateOrCreate(account, metadata, file, byteArrayOutputStream);
-			
+			String itms = windmillService.updateOrCreate(account, metadata, file, formDataMap);
+						
 			try {
 				Files.delete(file.toPath());
 			} catch (IOException e) {
@@ -165,11 +194,11 @@ public class AccountResource {
 			LOGGER.debug(String.format("No token present at Authorization: Bearer."));			
 			return Response.status(Status.BAD_REQUEST).build();    		
     	}    	
-    	catch(IllegalArgumentException e) { //UUID.fromString
+    	catch(IllegalArgumentException | InvalidClaimException e) { //UUID.fromString
 			return Response.status(Status.UNAUTHORIZED).build();
-        }    	    	
+        }    	
     	catch (NoSubscriptionException e) {
-    		throw new UnauthorizedAccountAccessException(String.format("Unauthorized acccess attempted for account '%s' using claim '%s'.", account_identifier, claims), e);
+    		throw new UnauthorizedAccountAccessException(Messages.unauthorized(account_identifier, claims), e);
 		} catch (ConfigurationException e) {
 			LOGGER.warn("Unabled to parse 'plist' passed as input", e.getCause());
 			return Response.status(Status.BAD_REQUEST).entity("The 'plist' parameter should be a 'manifest.xml' as referenced at https://developer.apple.com/library/content/documentation/IDEs/Conceptual/AppDistributionGuide/TestingYouriOSApp/TestingYouriOSApp.html").type(MediaType.TEXT_PLAIN_TYPE).build();

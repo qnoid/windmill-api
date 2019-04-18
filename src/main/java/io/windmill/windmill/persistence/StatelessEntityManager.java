@@ -30,6 +30,11 @@ public class StatelessEntityManager implements WindmillEntityManager {
 	}
 
 	@Override
+	public <T> T find(Class<T> entityClass, Object primaryKey) throws EJBException {
+		return this.em.find(entityClass, primaryKey);
+	}
+
+	@Override
     @SuppressWarnings("unchecked")
 	public <T> T getSingleResult(String name, QueryConfiguration<T> queryConfiguration) throws EJBException {
 		return (T) queryConfiguration.apply(em.createNamedQuery(name)).getSingleResult();

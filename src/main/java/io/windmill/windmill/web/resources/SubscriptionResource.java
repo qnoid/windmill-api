@@ -34,6 +34,7 @@ import io.windmill.windmill.services.AuthenticationService;
 import io.windmill.windmill.services.SubscriptionService;
 import io.windmill.windmill.services.exceptions.AppStoreServiceException;
 import io.windmill.windmill.services.exceptions.AuthenticationServiceException;
+import io.windmill.windmill.services.exceptions.InvalidClaimException;
 import io.windmill.windmill.services.exceptions.NoRecoredTransactionsException;
 import io.windmill.windmill.services.exceptions.NoSubscriptionException;
 import io.windmill.windmill.services.exceptions.ReceiptVerificationException;
@@ -82,7 +83,7 @@ public class SubscriptionResource {
 	public Response isSubscriber(@PathParam("account") final UUID account_identifier, @HeaderParam(HttpHeaders.AUTHORIZATION) String authorization) {
     	
     	try {    					
-    		JWT<JWS> jwt = this.authenticationService.subscription(authorization);
+    		JWT<JWS> jwt = this.authenticationService.bearer(authorization);
 			
 			Claims<Subscription> claims = Claims.subscription(jwt);
 			
@@ -91,7 +92,7 @@ public class SubscriptionResource {
 			
 			this.subscriptionService.latest(subscription);
 			
-	    	SubscriptionAuthorizationToken subscriptionAuthorizationToken = this.authenticationService.authorizationToken(subscription);
+	    	SubscriptionAuthorizationToken subscriptionAuthorizationToken = this.authenticationService.issueAuthorizationToken(subscription);
 	    	
 			JWT<JWS> accessToken = this.authenticationService.jwt(subscriptionAuthorizationToken);
 
@@ -156,7 +157,7 @@ public class SubscriptionResource {
     public Response subscribe(final CKUserRecord user, @HeaderParam(HttpHeaders.AUTHORIZATION) String authorization) {
     	
     	try {    					
-    		JWT<JWS> jwt = this.authenticationService.subscription(authorization);
+    		JWT<JWS> jwt = this.authenticationService.bearer(authorization);
 			
 			Claims<Subscription> claims = Claims.subscription(jwt);
 			
@@ -168,7 +169,7 @@ public class SubscriptionResource {
 				return Response.status(Status.UNAUTHORIZED).entity("expired").build();
 			}
 
-	    	SubscriptionAuthorizationToken subscriptionAuthorizationToken = this.authenticationService.authorizationToken(subscription);
+	    	SubscriptionAuthorizationToken subscriptionAuthorizationToken = this.authenticationService.issueAuthorizationToken(subscription);
 	    		    	
 			JWT<JWS> accessToken = this.authenticationService.jwt(subscriptionAuthorizationToken);
 
@@ -234,10 +235,10 @@ public class SubscriptionResource {
 				return Response.status(Status.NO_CONTENT).build();
 			}
 									
-			JWT<JWS> jwt = this.authenticationService.jwt(subscription);
+			JWT<JWS> subscriptionClaim = this.authenticationService.jwt(subscription);
 			
 			JsonObject response = Json.createObjectBuilder()
-					.add("claim", jwt.toString())
+					.add("claim", subscriptionClaim.toString())
 					.build();
 			
 			Status status = metadata.get(Metadata.WAS_CREATED) == null ? Status.OK : Status.CREATED;

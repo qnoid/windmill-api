@@ -14,14 +14,16 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
+import io.windmill.windmill.services.exceptions.InvalidSignatureException;
 import io.windmill.windmill.web.security.JWT.Header;
+import io.windmill.windmill.web.security.JWT.Header.Type;
 import io.windmill.windmill.web.security.JWT.JWS;
 
 /**
  * Use this type to create and validate JWT of JWS type.
  * 
  *  @see #jws(Claims) To create a new JWT
- *  @see #validate(JWT) To validate an existing JWT 
+ *  @see #validate(JWT, Type) To validate an existing JWT 
  */
 public class Claim {
 
@@ -63,9 +65,13 @@ public class Claim {
 	
 	String encodedSignature(String encodedHeader, String encodedPayload) throws UnsupportedEncodingException {
 		
-        byte[] signature = this.mac.doFinal(String.format("%s.%s", encodedHeader, encodedPayload).getBytes("UTF-8"));
+        byte[] signature = sign(String.format("%s.%s", encodedHeader, encodedPayload).getBytes("UTF-8"));
         
 		return this.encoder.encodeToString(signature);
+	}
+
+	byte[] sign(byte[] bytes) {
+		return this.mac.doFinal(bytes);
 	}
 
 	/**
@@ -100,7 +106,7 @@ public class Claim {
 	 * @param claims the claims for the JWT
 	 * @param version a version
 	 * @return a new {@link JWT} of {@link JWS} type or empty if there was a problem creating it. 
-	 * @see {@link #validate(JWT)} To validate a JWT
+	 * @see {@link #validate(JWT, Type)} To validate a JWT
 	 */
 	public Optional<JWT<JWS>> jws(Claims<JWS> claims) throws UnsupportedEncodingException {
 		return this.jws(claims, Long.valueOf(1));
@@ -142,16 +148,18 @@ public class Claim {
 	 * The {@link Claim} used to validate the JWT should be equal to the one that created it using {@link #jws(Claims)}
 	 * 
 	 * @param jws the JWT to validate, Base64 and UTF-8 encoded.
+	 * @param type TODO
 	 * @throws UnsupportedEncodingException if the given JWS is not UTF-8 encoded.
+	 * @throws InvalidSignatureException if the signature is invalid
 	 * @see JWT#jws(String) To create a new JWT
 	 * @see Claims#subscription(JWT) How to extract the claims of a valid {@link JWT} 
 	 */
-	public void validate(JWT<JWS> jws) throws UnsupportedEncodingException {
+	public void validate(JWT<JWS> jws, Type type) throws UnsupportedEncodingException, InvalidSignatureException {
 
 		String encodedSignature = this.encodedSignature(jws.header, jws.payload);
 
 		HeaderVerification<JWS> header = 
-				HeaderVerification.make(this.algorithm, Header.Type.JWT);
+				HeaderVerification.make(this.algorithm, type);
 		
 		header.verify(jws);
 				

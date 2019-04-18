@@ -29,7 +29,7 @@ public class MetadataTest {
 		
 		Manifest metadata = Manifest.read(inputStreamReader);
 		
-		Assert.assertEquals("io.windmill.windmill", metadata.getIdentifier());
+		Assert.assertEquals("io.windmill.windmill", metadata.getBundle());
 		Assert.assertEquals(1.0, metadata.getVersion());
 		Assert.assertEquals("windmill", metadata.getTitle());
 	}

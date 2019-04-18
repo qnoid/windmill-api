@@ -1,4 +1,4 @@
-package io.windmill.windmill.web.resources;
+package io.windmill.windmill.web;
 
 import java.util.Optional;
 

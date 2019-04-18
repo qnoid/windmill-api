@@ -191,7 +191,7 @@ public class SubscriptionService {
 		Subscription subscription = this.appStoreService.latest(receiptData, new LatestReceipt() {
 			
 			@Override
-			public AppStoreTransaction process(JsonArray transactions) throws ReceiptVerificationException, NoRecoredTransactionsException {
+			public AppStoreTransaction process(JsonArray transactions) throws ReceiptVerificationException, NoRecoredTransactionsException, NoSubscriptionException {
 				return updateSubscription(transactions, receiptData, metadata).getTransaction();
 			}
 		}).getSubscription();
@@ -214,7 +214,7 @@ public class SubscriptionService {
 		});		
 	}
 
-	private Subscription belongs(UUID account_identifier, UUID subscription_identifier, QueryConfiguration<Subscription> queryConfiguration) {
+	private Subscription belongs(UUID account_identifier, UUID subscription_identifier, QueryConfiguration<Subscription> queryConfiguration) throws NoSubscriptionException {
 		try {
 						
 			Subscription subscription = this.entityManager.getSingleResult("subscription.belongs_to_account_identifier", new QueryConfiguration<Subscription>() {

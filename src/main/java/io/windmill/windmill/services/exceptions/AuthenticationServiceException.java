@@ -1,6 +1,8 @@
 package io.windmill.windmill.services.exceptions;
 
-public class AuthenticationServiceException extends RuntimeException {
+import javax.ws.rs.ProcessingException;
+
+public class AuthenticationServiceException extends ProcessingException {
 
 	/**
 	 * 

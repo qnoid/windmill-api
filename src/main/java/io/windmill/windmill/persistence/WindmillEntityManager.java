@@ -12,6 +12,8 @@ public interface WindmillEntityManager {
 
     static final Logger LOGGER = Logger.getLogger(WindmillEntityManager.class);
 
+	<T> T find(Class<T> entityClass, Object primaryKey) throws EJBException;
+	
 	<T> void persist(T obj);
 
 	<T> T merge(T obj) throws EJBException;
@@ -36,6 +38,11 @@ public interface WindmillEntityManager {
         
 	public static WindmillEntityManager unwrapEJBExceptions(final WindmillEntityManager wem) {
 		return new WindmillEntityManager() {
+			
+			@Override
+			public <T> T find(Class<T> entityClass, Object primaryKey) throws EJBException {
+				return wem.find(entityClass, primaryKey);
+			}
 					    
 			@Override
 			public <T> void persist(T objc) {

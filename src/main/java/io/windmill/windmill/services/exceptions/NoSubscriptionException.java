@@ -1,6 +1,6 @@
 package io.windmill.windmill.services.exceptions;
 
-public class NoSubscriptionException extends RuntimeException {
+public class NoSubscriptionException extends Exception {
 
 	/**
 	 * 

@@ -54,7 +54,7 @@ public class AccountService {
     	entityManager = WindmillEntityManager.unwrapEJBExceptions(this.entityManager);        
     }
 	
-	private Account belongs(UUID account_identifier, UUID subscription_identifier, QueryConfiguration<Subscription> queryConfiguration) {
+	private Account belongs(UUID account_identifier, UUID subscription_identifier, QueryConfiguration<Subscription> queryConfiguration) throws NoSubscriptionException {
 		
 		try {
 						
@@ -101,12 +101,12 @@ public class AccountService {
 		return belongs(account_identifier, subscription_identifier, QueryConfiguration.empty());		
 	}
 	
-	public Export updateOrCreate(Account account, String export_identifier, String export_title,
+	public Export updateOrCreate(Account account, String export_bundle, String export_title,
 			Double export_version) throws AccountServiceException, NoAccountException {
 
 		try {
-			Export export = this.entityManager.findOrProvide("export.find_by_identifier", 
-				identitifier(export_identifier), () -> new Export(export_identifier, export_version, export_title));
+			Export export = this.entityManager.findOrProvide("export.find_by_bundle", query -> 
+					query.setParameter("bundle", export_bundle), () -> new Export(export_bundle, export_version, export_title));
 		
 			Condition.guard(export.account == null || export.hasAccount(account), 
 					() -> new AccountServiceException("io.windmill.api: error: The bundle identifier is already used by another account."));

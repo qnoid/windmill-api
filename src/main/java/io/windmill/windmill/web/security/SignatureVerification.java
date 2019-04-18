@@ -6,7 +6,7 @@ import java.util.Base64;
 import java.util.Base64.Decoder;
 
 import io.windmill.windmill.common.Guard;
-import io.windmill.windmill.web.resources.InvalidSignatureException;
+import io.windmill.windmill.services.exceptions.InvalidSignatureException;
 import io.windmill.windmill.web.security.JWT.JWS;
 
 public interface SignatureVerification extends InvalidSignatureGuard, JWTVerification<JWS> {

@@ -4,10 +4,7 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
 import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.UUID;
 
 import javax.annotation.Priority;
 import javax.inject.Inject;
@@ -22,23 +19,19 @@ import javax.ws.rs.ext.Provider;
 
 import org.jboss.logging.Logger;
 
-import io.windmill.windmill.common.Condition;
-import io.windmill.windmill.common.Secret;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
 import io.windmill.windmill.services.AuthenticationService;
-import io.windmill.windmill.web.resources.InvalidClaimException;
-import io.windmill.windmill.web.resources.InvalidSignatureException;
+import io.windmill.windmill.services.exceptions.InvalidClaimException;
+import io.windmill.windmill.services.exceptions.InvalidSignatureException;
+import io.windmill.windmill.services.exceptions.MissingKeyException;
 import io.windmill.windmill.web.security.Claims;
-import io.windmill.windmill.web.security.Claims.Type;
-import io.windmill.windmill.web.security.JWT;
-import io.windmill.windmill.web.security.JWT.JWS;
 
-@RequiresSubscriptionAccess
+@RequiresSubscriptionAuthorizationToken
 @Provider
 @Priority(Priorities.AUTHENTICATION)
-public class SubscriptionAccessContainerRequestFilter implements ContainerRequestFilter {
+public class SubscriptionAuthorizationTokenContainerRequestFilter implements ContainerRequestFilter {
 
-	public static final Logger LOGGER = Logger.getLogger(SubscriptionAccessContainerRequestFilter.class);
+	public static final Logger LOGGER = Logger.getLogger(SubscriptionAuthorizationTokenContainerRequestFilter.class);
 	
     @Inject
     private AuthenticationService authenticationService;
@@ -48,26 +41,8 @@ public class SubscriptionAccessContainerRequestFilter implements ContainerReques
 	public void filter(ContainerRequestContext requestContext) throws IOException {
 
 		try {
-    		JWT<JWS> jwt = this.authenticationService.token(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION));    	
-    		this.authenticationService.validate(jwt);
-
-    		Claims<SubscriptionAuthorizationToken> claims = Claims.accessToken(jwt);
+    		Claims<SubscriptionAuthorizationToken> claims = this.authenticationService.isSubscriptionAuthorizationToken(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION));
     		
-    		UUID subscription_identifier = Optional.ofNullable(claims.sub).map(UUID::fromString).get();
-    		
-    		Secret<SubscriptionAuthorizationToken> secret = 
-    				Optional.ofNullable(claims.jti)
-    					.map(Base64.getUrlDecoder()::decode)
-    					.map( base64Decoded -> { Secret<SubscriptionAuthorizationToken> token = Secret.of(base64Decoded); return token; } )
-    					.get();
-
-			this.authenticationService.exists(secret, subscription_identifier);
-			
-			if(Condition.doesnot(claims.isTyp(Type.ACCESS_TOKEN))) {
-				LOGGER.debug(String.format("Claim not an access token. Instead got: %s", claims.typ));
-				requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());
-			}
-
 			if(claims.hasExpired()) {
 				LOGGER.debug(String.format("Subscription access expired %s minutes ago at: %s", ChronoUnit.MINUTES.between(claims.exp, Instant.now()), claims.exp));				
 				requestContext.abortWith(Response.status(Status.UNAUTHORIZED).entity("expired").type(MediaType.TEXT_PLAIN_TYPE).build());
@@ -80,7 +55,7 @@ public class SubscriptionAccessContainerRequestFilter implements ContainerReques
     	catch(InvalidSignatureException | InvalidClaimException e) {
 			LOGGER.debug(e.getMessage(), e.getCause());    		
     		requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());
-    	} catch (InvalidKeyException e) {
+    	} catch (MissingKeyException | InvalidKeyException e) {
 			LOGGER.error(e.getMessage(), e.getCause());
 			requestContext.abortWith(Response.status(Status.INTERNAL_SERVER_ERROR).build());
 		}
