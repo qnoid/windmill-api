@@ -1,34 +1,52 @@
 package io.windmill.windmill.common;
 
 import java.io.BufferedReader;
-import java.io.File;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.charset.Charset;
 
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.plist.XMLPropertyListConfiguration;
 
+import io.windmill.windmill.services.MustacheWriter;
+
 public class Manifest {
 
-	public static Manifest read(InputStreamReader inputStreamReader) throws ConfigurationException {
+	public static Manifest manifest(InputStream in) throws IOException, ConfigurationException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+		byte[] buffer = new byte[1024];
+		int len;
+
+		while ((len = in.read(buffer)) != -1) {
+			out.write(buffer, 0, len);
+		}
+	
+		return Manifest.manifest(out);
+	}
+
+	public static Manifest manifest(ByteArrayOutputStream buffer) throws ConfigurationException {
 				
+		InputStream is = new ByteArrayInputStream(buffer.toByteArray()); 
+		InputStreamReader reader = new InputStreamReader(is, Charset.forName("UTF-8"));
 		XMLPropertyListConfiguration xmlPropertyListConfiguration = new XMLPropertyListConfiguration();			
-		xmlPropertyListConfiguration.read(new BufferedReader(inputStreamReader));
+		xmlPropertyListConfiguration.read(new BufferedReader(reader));
 		XMLPropertyListConfiguration items = xmlPropertyListConfiguration.get(XMLPropertyListConfiguration.class, "items");
-        String bundle_identifier = items.getString("metadata.bundle-identifier");
+
+		String bundle_identifier = items.getString("metadata.bundle-identifier");
         Double bundle_version = items.getDouble("metadata.bundle-version");
         String bundle_title = items.getString("metadata.title");
-        
-        return new Manifest(bundle_identifier, bundle_version, bundle_title);
+
+		return new Manifest(buffer, bundle_identifier, bundle_version, bundle_title);
 	}
 	
+	private ByteArrayOutputStream buffer;
+
     @NotNull
     private String bundle;
 
@@ -36,42 +54,37 @@ public class Manifest {
     private Double version;
 
     @NotNull
-    private String title;
-
-	public Manifest(String bundle, Double version, String title) {
+	private String title;
+    
+	public Manifest(ByteArrayOutputStream buffer, String bundle, Double version, String title) {
+		this.buffer = buffer;
 		this.bundle = bundle;
 		this.version = version;
 		this.title = title;
 	}
 
 	public String getBundle() {
-		return bundle;
+		return this.bundle;
 	}
 
 	public Double getVersion() {
-		return version;
+		return this.version;
 	}
 
 	public String getTitle() {
-		return title;
+		return this.title;
 	}
 
-	/**
-	 * Copies the IPA hold by the ipaStream to a temp location. 
-	 * 
-	 * @param account_identifier the account associated with the given IPA
-	 * @param ipaStream a stream to the IPA to copy to
-	 * @return the file where the given ipaStream was copied to
-	 * @throws IOException in case an I/O error occurs
-	 */
-	public File copy(String account_identifier, InputStream ipaStream) throws IOException {
+	public ByteArrayOutputStream plistWithURLString(String urlString) throws IllegalArgumentException {
 		
-		Path path = Paths.get("/tmp", account_identifier, bundle, String.valueOf(version));
-		Files.createDirectories(path);
-		File file = new File(path.toFile(), String.format("%s.ipa", title));
-		
-		Files.copy(ipaStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-		
-		return file;
-	}	
+		try {
+			InputStream is = new ByteArrayInputStream(this.buffer.toByteArray());
+			InputStreamReader reader = new InputStreamReader(is, Charset.forName("UTF-8"));
+			MustacheWriter mustacheWriter = new MustacheWriter();
+			
+			return mustacheWriter.urlString(reader, urlString);
+		} catch (IOException e) {
+			throw new RuntimeException(e.getCause());
+		}
+	}
 }

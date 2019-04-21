@@ -113,8 +113,6 @@ public class AccountService {
 
 			export.setModifiedAt(Instant.now());
 			
-			account.add(export);
-			account.setModifiedAt(Instant.now());		
 			this.entityManager.persist(export);
 			
 			return export;		

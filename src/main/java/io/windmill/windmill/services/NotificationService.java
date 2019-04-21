@@ -1,6 +1,8 @@
 package io.windmill.windmill.services;
 
+import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -20,6 +22,7 @@ import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
 import com.amazonaws.services.sns.model.SetEndpointAttributesRequest;
 
+import io.windmill.windmill.persistence.sns.Endpoint;
 import io.windmill.windmill.services.Notification.Platform;
 
 @ApplicationScoped
@@ -63,7 +66,7 @@ public class NotificationService {
 		this.sns = AmazonSNSClientBuilder.defaultClient();
 	}
 
-	public boolean notify(String message, String endpointArn) throws EndpointDisabledException {
+	private boolean notify(String message, String endpointArn) throws EndpointDisabledException {
 		
 		String notification = Notification.Messages.on(platform, message);
 		PublishRequest publishRequest = request(
@@ -130,5 +133,23 @@ public class NotificationService {
 				.withAttributes(attributes);
 		
 		sns.setEndpointAttributes(setEndpointAttributesRequest);
+	}
+
+	public void notify(String notification, List<Endpoint> endpoints) 
+	{
+		for (Endpoint endpoint : endpoints) {
+			String endpointArn = endpoint.getArn();
+			
+			try {
+				boolean success = notify(notification, endpointArn);
+				if (success) {
+					endpoint.setAccessedAt(Instant.now());
+					WindmillService.LOGGER.info(String.format("Succesfully sent notification to endpoint '%s'.", endpoint));
+				}
+			}
+			catch (EndpointDisabledException e) {
+				WindmillService.LOGGER.debug(String.format("Endpoint `%s` is reported as disabled by AmazonSNS.", endpointArn), e);
+			}
+		}
 	}
 }

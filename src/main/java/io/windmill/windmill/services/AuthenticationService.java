@@ -26,6 +26,7 @@ import com.amazonaws.services.cloudfront.util.SignerUtils.Protocol;
 
 import io.windmill.windmill.common.Condition;
 import io.windmill.windmill.common.Secret;
+import io.windmill.windmill.persistence.Account;
 import io.windmill.windmill.persistence.Export;
 import io.windmill.windmill.persistence.QueryConfiguration;
 import io.windmill.windmill.persistence.Subscription;
@@ -44,6 +45,7 @@ import io.windmill.windmill.web.security.JWT;
 import io.windmill.windmill.web.security.JWT.Header;
 import io.windmill.windmill.web.security.JWT.JWS;
 import io.windmill.windmill.web.security.MacAlgorithm;
+import io.windmill.windmill.web.security.Signed;
 
 @ApplicationScoped
 public class AuthenticationService {
@@ -167,15 +169,23 @@ public class AuthenticationService {
 			throw new AuthenticationServiceException(e.getMessage(), e);
 		}
 	}
-	
-	public URI export(Export export, Instant dateLessThan) throws InvalidKeySpecException, IOException {
-		return sign(export.path(), dateLessThan);	
+
+	public Signed<URI> export(Account account, Export export, Instant dateLessThan) {
+		return () -> sign(export.path(account), dateLessThan);	
+	}
+
+	public Signed<URI> export(Export export, Instant dateLessThan) {
+		return () -> sign(export.path(), dateLessThan);	
 	}
 	
-	public URI manifest(Export export, Instant fifteenMinutesFromNow) {
-		return sign(export.getManifest().path(), fifteenMinutesFromNow);			
+	public Signed<URI> manifest(Account account, Export export, Instant fifteenMinutesFromNow) {
+		return () -> sign(export.getManifest().path(account), fifteenMinutesFromNow);			
 	}
-	
+
+	public Signed<URI> manifest(Export export, Instant fifteenMinutesFromNow) {
+		return () -> sign(export.getManifest().path(), fifteenMinutesFromNow);			
+	}
+
 	/**
 	 * @param secret a token as represented by a SubscriptionAuthorizationToken as returned by {@link #issueAuthorizationToken(Subscription)} 
 	 * @param subscription_identifier the subscription the SubscriptionAuthorizationToken must belong to.

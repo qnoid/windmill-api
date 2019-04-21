@@ -110,6 +110,7 @@ public class Account {
 	public void add(Export export) {
 		export.account = this;		
 		this.exports.add(export);
+		this.setModifiedAt(Instant.now());		
 	}
 	
 	public void add(Device device) {

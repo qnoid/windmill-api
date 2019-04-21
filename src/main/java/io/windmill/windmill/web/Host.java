@@ -9,13 +9,12 @@ import javax.ws.rs.core.UriBuilder;
 import com.amazonaws.Protocol;
 
 import io.windmill.windmill.persistence.Account;
-import io.windmill.windmill.services.StorageService;
 
 public enum Host {
 	API_PRODUCTION("api.windmill.io"),
 	API_DEVELOPMENT("192.168.1.2"),
 	
-	OTA_PRODUCTION(StorageService.BUCKET_CANONICAL_NAME);
+	OTA_PRODUCTION("ota.windmill.io");
 			
 	@FunctionalInterface
 	public static interface URITemplate {

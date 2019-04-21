@@ -43,13 +43,18 @@ public class Export {
 
     	/**
     	 * 
+    	 * @param account TODO
     	 * @return the path where the manifest is actually available to download from
     	 */
-		public URI path() {
+		public URI path(Account account) {
 			return this.getExport()
-					.location()
+					.location(account)
     				.path(this.name)
     				.build();
+    	}
+		
+		public URI path() {
+			return this.path(this.export.account);
     	}
 
 		public Export getExport() {
@@ -83,14 +88,12 @@ public class Export {
     private Instant createdAt;
 
     @Column(name="accessed_at")
-    @NotNull
     private Instant accessedAt;
 
     @Column(name="modified_at")
     private Instant modifiedAt;
 
     @ManyToOne
-    @NotNull
     @JsonbTransient
     public Account account;
     
@@ -119,8 +122,8 @@ public class Export {
     	this.createdAt = Instant.now();
     }
         
-	private UriBuilder location() {
-		return UriBuilder.fromPath(this.getAccount().getIdentifier().toString())
+	private UriBuilder location(Account account) {
+		return UriBuilder.fromPath(account.getIdentifier().toString())
 				.path(this.getIdentifier().toString())
 				.path("export");
 	}
@@ -206,10 +209,14 @@ public class Export {
 		return Optional.ofNullable(this.account).filter(account -> account.equals(that)).isPresent();
 	}
 
-	public URI path() {
-		return this.location()
+	public URI path(Account account) {
+		return this.location(account)
 				.path(String.format("%s.ipa", this.title))
 				.build();
+	}
+
+	public URI path() {
+		return this.path(this.account);
 	}
 
 	/**

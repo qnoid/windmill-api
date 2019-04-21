@@ -1,6 +1,6 @@
 package io.windmill.windmill.services.exceptions;
 
-public class StorageServiceException extends RuntimeException {
+public class StorageServiceException extends Exception {
 
 	/**
 	 * 
