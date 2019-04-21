@@ -8,19 +8,28 @@
 
 package io.windmill.windmill.services;
 
-import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.net.URI;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation.Builder;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.Response.Status.Family;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.util.Hex;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
-import com.amazonaws.services.s3.transfer.Upload;
+import io.windmill.windmill.common.Condition;
+import io.windmill.windmill.services.exceptions.StorageServiceException;
+import io.windmill.windmill.web.security.CryptographicHashFunction;
+import io.windmill.windmill.web.security.SHA256;
+import io.windmill.windmill.web.security.Signed;
 
 /**
  * @author qnoid
@@ -29,23 +38,28 @@ import com.amazonaws.services.s3.transfer.Upload;
 public class StorageService {
 
     private static final Logger LOGGER = Logger.getLogger(StorageService.class);
-
-    private TransferManager transferManager;
-
-	public static final String BUCKET_CANONICAL_NAME = "ota.windmill.io";
-
-    @PostConstruct
-    private void init() {
-        transferManager = TransferManagerBuilder.defaultTransferManager();        
-    }
     
-    void upload(InputStream inputStream, String objectKey) throws AmazonServiceException, AmazonClientException, InterruptedException {
-      this.upload(inputStream, objectKey, new ObjectMetadata());
-    }
+    private CryptographicHashFunction hash = SHA256.create();
 
-    void upload(InputStream inputStream, String objectKey, ObjectMetadata objectMetadata) throws AmazonServiceException, AmazonClientException, InterruptedException {
-        Upload upload = transferManager.upload(BUCKET_CANONICAL_NAME, objectKey, inputStream, objectMetadata);
-        upload.waitForCompletion();
-        LOGGER.info(String.format("Upload of '%s' %s.", objectKey, upload.getState()));
+    /**
+     */
+	Status upload(ByteArrayOutputStream outputStream, Signed<URI> signed) throws StorageServiceException {
+
+		byte[] bytes = outputStream.toByteArray();
+		
+		final Client client = ClientBuilder.newClient();
+		
+		Builder request = client.target(signed.value()).request()
+					.header("content-type", "text/xml plist")
+					.header("x-amz-content-sha256", Hex.encodeHex(hash.hash(bytes)));
+
+		Response response = request.put(Entity.entity(new ByteArrayInputStream(bytes), MediaType.APPLICATION_OCTET_STREAM_TYPE));
+		Status status = Status.fromStatusCode(response.getStatus());
+		
+        LOGGER.info(String.format("Upload at '%s' %s.", signed.value(), status));
+
+        Condition.guard(Family.SUCCESSFUL == status.getFamily(), () -> new StorageServiceException(status.getReasonPhrase()));
+        
+		return status;
     }
 }

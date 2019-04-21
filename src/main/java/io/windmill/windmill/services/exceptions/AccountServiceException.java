@@ -1,6 +1,6 @@
 package io.windmill.windmill.services.exceptions;
 
-public class AccountServiceException extends RuntimeException {
+public class AccountServiceException extends Exception {
 
 	/**
 	 * 

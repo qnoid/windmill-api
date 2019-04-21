@@ -19,7 +19,7 @@ public class MustacheStringTest {
 		
 		String plist = IOUtils.toString(plistStream, "UTF-8");
 		
-		ByteArrayOutputStream actual = new MustacheWriter().urlString(plist, String.format("https://%s/%s.ipa", StorageService.BUCKET_CANONICAL_NAME, "foo"));
+		ByteArrayOutputStream actual = new MustacheWriter().urlString(plist, String.format("https://%s/%s.ipa", "ota.windmill.io", "foo"));
 		
 		Assert.assertEquals(expected, new String( actual.toByteArray(), "UTF-8"));
 	}

@@ -1,12 +1,13 @@
 package io.windmill.windmill.common;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Optional;
 
 import org.jboss.resteasy.util.Hex;
+
+import io.windmill.windmill.web.security.CryptographicHashFunction;
+import io.windmill.windmill.web.security.SHA256;
 
 public class Secret<T> {
 
@@ -43,8 +44,8 @@ public class Secret<T> {
 	 * 
 	 * @return the encoded bytes as a hex string
 	 */
-	public String encoded(MessageDigest messageDigest) {
-		return Hex.encodeHex(messageDigest.digest(this.bytes));
+	public String encoded(CryptographicHashFunction hashFunction) {
+		return Hex.encodeHex(hashFunction.hash(this.bytes));
 	}    
 
 	/**
@@ -52,13 +53,8 @@ public class Secret<T> {
 	 * 
 	 * @return the encoded bytes as a hex string
 	 */
-	public Optional<String> encoded() {
-		
-		try {			
-			return Optional.of(this.encoded(MessageDigest.getInstance("SHA-256")));		
-		} catch (NoSuchAlgorithmException e) {
-			return Optional.empty();
-		}
+	public Optional<String> encoded() {		
+		return Optional.of(this.encoded(SHA256.create()));
 	}
 	
 	public String base64() {

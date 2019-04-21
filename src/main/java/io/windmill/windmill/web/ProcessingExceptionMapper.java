@@ -27,7 +27,7 @@ public class ProcessingExceptionMapper implements ExceptionMapper<ProcessingExce
 			LOGGER.debug(exception.getMessage(), Optional.ofNullable(exception.getCause()).orElse(exception));
 			return Response.status(Status.BAD_REQUEST).entity("The request body was malformed JSON").build();
 		} else if (exception instanceof UnauthorizedAccountAccessException) {
-			LOGGER.warn(exception.getMessage());			
+			LOGGER.warn(exception.getMessage(), exception);			
 			return Response.status(Status.UNAUTHORIZED).build();
 		} else if (exception instanceof SubscriptionAuthorizationTokenException) {
 			LOGGER.warn(exception.getMessage());			

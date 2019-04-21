@@ -1,13 +1,7 @@
 package io.windmill.windmill.web.resources;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.security.spec.InvalidKeySpecException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.NoSuchElementException;
@@ -20,6 +14,7 @@ import javax.transaction.Transactional;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -30,12 +25,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import com.amazonaws.services.sns.model.InternalErrorException;
 
+import io.windmill.windmill.common.Condition;
 import io.windmill.windmill.common.Manifest;
 import io.windmill.windmill.persistence.Account;
 import io.windmill.windmill.persistence.Device;
@@ -56,10 +50,10 @@ import io.windmill.windmill.services.exceptions.StorageServiceException;
 import io.windmill.windmill.services.exceptions.UnauthorizedAccountAccessException;
 import io.windmill.windmill.services.exceptions.UnauthorizedAccountAccessException.Messages;
 import io.windmill.windmill.web.RequiresSubscriptionAuthorizationToken;
-import io.windmill.windmill.web.common.FormDataMap;
 import io.windmill.windmill.web.security.Claims;
 import io.windmill.windmill.web.security.JWT;
 import io.windmill.windmill.web.security.JWT.JWS;
+import io.windmill.windmill.web.security.Signed;
 
 /**
  * While developing, looks up ~/.aws/credentials for the AWS_ACCESS_KEY_ID and AWS_SECRET_KEY to access the S3 bucket
@@ -133,20 +127,17 @@ public class AccountResource {
     		          		
 			Instant fifteenMinutesFromNow = Instant.now().plus(Duration.ofMinutes(15));
 			
-			URI url = this.authenticationService.export(export, fifteenMinutesFromNow);
+			Signed<URI> url = this.authenticationService.export(export, fifteenMinutesFromNow);
 
-			return Response.seeOther(url).build();
+			return Response.seeOther(url.value()).build();
     	}
     	catch (ExportGoneException e) {
 			LOGGER.debug(e.getMessage());			    		
     		return Response.status(Status.GONE).build();
     	}
-    	catch(NoSuchElementException | UnsupportedEncodingException | IllegalArgumentException | InvalidSignatureException | InvalidClaimException e) { //UUID.fromString
+    	catch(NoSuchElementException | IllegalArgumentException | InvalidSignatureException | InvalidClaimException e) { //UUID.fromString
 			LOGGER.debug(e.getMessage());			    		    		
 			return Response.status(Status.UNAUTHORIZED).build();
-    	} catch (InvalidKeySpecException | IOException e ) {
-			LOGGER.error(e.getMessage(), e.getCause());
-			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}    	
     }
 	
@@ -162,10 +153,10 @@ public class AccountResource {
     @POST
     @Path("/{account}/export")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @Produces({MediaType.TEXT_PLAIN})
     @Transactional
     @RequiresSubscriptionAuthorizationToken
-    public Response export(@PathParam("account") final UUID account_identifier, final MultipartFormDataInput input, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
+    public Response export(@PathParam("account") final UUID account_identifier, final Manifest manifest, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
 
 		JWT<JWS> jwt = this.authenticationService.bearer(authorization);
     	
@@ -175,20 +166,12 @@ public class AccountResource {
     		Account account = 
     				this.accountService.belongs(account_identifier, UUID.fromString(claims.sub));
 
-    		FormDataMap formDataMap = FormDataMap.get(input);
-    	
-			Manifest metadata = formDataMap.readManifest();
-			File file = formDataMap.cacheIPA(account_identifier.toString(), metadata);
+			Export export = windmillService.updateOrCreate(account, manifest);
 			
-			String itms = windmillService.updateOrCreate(account, metadata, file, formDataMap);
+			Instant fifteenMinutesFromNow = Instant.now().plus(Duration.ofMinutes(15));
+			Signed<URI> location = this.authenticationService.export(account, export, fifteenMinutesFromNow);
 						
-			try {
-				Files.delete(file.toPath());
-			} catch (IOException e) {
-				LOGGER.warn(String.format("File at path '%s' could not be deleted.", file.toPath()), e);				
-			}
-			
-			return Response.ok(itms).build();
+			return Response.status(Status.NO_CONTENT).contentLocation(location.value()).header("x-content-identifier", export.getIdentifier()).build();
     	}
     	catch(NoSuchElementException e) {
 			LOGGER.debug(String.format("No token present at Authorization: Bearer."));			
@@ -199,20 +182,50 @@ public class AccountResource {
         }    	
     	catch (NoSubscriptionException e) {
     		throw new UnauthorizedAccountAccessException(Messages.unauthorized(account_identifier, claims), e);
-		} catch (ConfigurationException e) {
-			LOGGER.warn("Unabled to parse 'plist' passed as input", e.getCause());
-			return Response.status(Status.BAD_REQUEST).entity("The 'plist' parameter should be a 'manifest.xml' as referenced at https://developer.apple.com/library/content/documentation/IDEs/Conceptual/AppDistributionGuide/TestingYouriOSApp/TestingYouriOSApp.html").type(MediaType.TEXT_PLAIN_TYPE).build();
 		} catch (AccountServiceException e) {
 			return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
 		} catch (NoAccountException e) {
 			LOGGER.debug(e.getMessage());			
 			return Response.status(Status.FORBIDDEN).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
-		} catch (StorageServiceException | FileNotFoundException | URISyntaxException e) {
+		} catch (StorageServiceException e) {
 			LOGGER.error(e.getMessage(), e.getCause());
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
     }
     
+	@PATCH
+	@Path("/{account}/export/{export}")
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @Transactional
+    @RequiresSubscriptionAuthorizationToken
+	public Response update(@PathParam("account") final UUID account_identifier, @PathParam("export") final UUID export_identifier, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
+		
+		JWT<JWS> jwt = this.authenticationService.bearer(authorization);
+    	
+		Claims<SubscriptionAuthorizationToken> claims = Claims.accessToken(jwt);
+		
+    	try {
+    		Account account = 
+    				this.accountService.belongs(account_identifier, UUID.fromString(claims.sub));
+
+			Export export = this.exportService.get(export_identifier);
+			
+			Condition.guard(export.account == null || export.hasAccount(account), 
+					() -> new AccountServiceException("io.windmill.api: error: The bundle identifier is already used by another account."));
+
+			account.add(export);
+			export.setModifiedAt(Instant.now());
+			
+			this.exportService.notify(export);
+	
+			return Response.ok(export).build();
+    	} catch (NoSubscriptionException e) {
+    		throw new UnauthorizedAccountAccessException(Messages.unauthorized(account_identifier, claims), e);
+	    } catch (AccountServiceException e) {
+	    	return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
+	    }
+	}
+	
     /**
      * 
      * @precondition the account <b>must</b> exist

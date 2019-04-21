@@ -1,14 +1,11 @@
 package io.windmill.windmill.services;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -17,29 +14,22 @@ import javax.ws.rs.core.UriBuilderException;
 
 import org.jboss.logging.Logger;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.sns.model.EndpointDisabledException;
-
-import io.windmill.windmill.apple.ItmsServices;
 import io.windmill.windmill.common.Manifest;
 import io.windmill.windmill.persistence.Account;
 import io.windmill.windmill.persistence.Export;
 import io.windmill.windmill.persistence.WindmillEntityManager;
-import io.windmill.windmill.persistence.sns.Endpoint;
-import io.windmill.windmill.services.Notification.Messages;
 import io.windmill.windmill.services.exceptions.AccountServiceException;
 import io.windmill.windmill.services.exceptions.NoAccountException;
 import io.windmill.windmill.services.exceptions.StorageServiceException;
 import io.windmill.windmill.web.Host;
-import io.windmill.windmill.web.common.FormDataMap;
 import io.windmill.windmill.web.security.JWT;
 import io.windmill.windmill.web.security.JWT.JWS;
+import io.windmill.windmill.web.security.Signed;
 
 @ApplicationScoped
 public class WindmillService {
 
-    private static final Logger LOGGER = Logger.getLogger(WindmillService.class);
+    static final Logger LOGGER = Logger.getLogger(WindmillService.class);
 
     @Inject
     private AuthenticationService authenticationService;    
@@ -47,13 +37,10 @@ public class WindmillService {
     @Inject
     private AccountService accountService; 
 
-    @Inject
-    private NotificationService notificationService; 
-
     @Inject 
     private StorageService storageService;
     
-    @Inject
+    @Inject 
     private WindmillEntityManager entityManager;
 
     @PostConstruct
@@ -66,57 +53,29 @@ public class WindmillService {
      * @precondition the account <b>must</b> exist  
 	 * @param account
 	 * @param manifest
-	 * @param ipa
-	 * @param formDataMap
 	 * @return a URI in the itms format, e.g. "itms-services://?action=download-manifest&url=https://ota.windmill.io/14810686-4690-4900-ADA5-8B0B7338AA39/io.windmill.windmill/1.0/windmill.plist"
 	 * @throws FileNotFoundException if the given ipa is not found
 	 * @throws URISyntaxException 
 	 * @throws UriBuilderException 
 	 * @throws AccountServiceException 
+	 * @throws StorageServiceException 
 	 */
-	public String updateOrCreate(Account account, Manifest manifest, File ipa, FormDataMap formDataMap) throws FileNotFoundException, AccountServiceException, NoAccountException, URISyntaxException 
+	public Export updateOrCreate(Account account, Manifest manifest) throws AccountServiceException, NoAccountException, StorageServiceException 
 	{
 		Export export = this.accountService.updateOrCreate(account, manifest.getBundle(), manifest.getTitle(), manifest.getVersion());
 	
 	    LOGGER.debug(String.format("Created or updated export for account '%s' with metadata.bundle-identifier '%s', metadata.bundle-version '%s', metadata.title '%s'", account, export.getIdentifier(), export.getVersion(), export.getTitle()));
 
-	    JWT<JWS> jwt = this.authenticationService.jwt(export);
-	    
-		try {
-			ObjectMetadata ipaMetadata = new ObjectMetadata();
-			ipaMetadata.setContentLength(ipa.length());
-			storageService.upload(new FileInputStream(ipa), export.path().toString(), ipaMetadata);
-
-			URI url = Host.API_DOMAIN.account(account).path("export").path(jwt.toString()).build();		    
-			ByteArrayOutputStream byteArrayOutputStream = formDataMap.plistWithURLString(url.toString());
-			byte[] byteArray = byteArrayOutputStream.toByteArray();
-			ObjectMetadata plistMetadata = new ObjectMetadata();
-			plistMetadata.setContentLength(byteArray.length);			
-			storageService.upload(new ByteArrayInputStream(byteArray), export.getManifest().path().toString(), plistMetadata);			
-		}
-		catch (AmazonClientException | InterruptedException amazonException) {
-			throw new StorageServiceException(amazonException);
-		}
+		JWT<JWS> jwt = this.authenticationService.jwt(export);		    
+		URI url = Host.API_DOMAIN.account(account).path("export").path(jwt.toString()).build();
 		
-		String notification = Messages.of("New build", String.format("%s %s is now available to install.", export.getTitle(), export.getVersion()));
-        
-		List<Endpoint> endpoints = entityManager.getResultList("endpoint.find_by_account_identifier", query -> query.setParameter("account_identifier", account.getIdentifier())); 
+		ByteArrayOutputStream byteArrayOutputStream = manifest.plistWithURLString(url.toString());
+		
+		Instant fifteenMinutesFromNow = Instant.now().plus(Duration.ofMinutes(15));
+		
+		Signed<URI> uri = this.authenticationService.manifest(account, export, fifteenMinutesFromNow);
+		System.out.println(storageService.upload(byteArrayOutputStream, uri));
 
-		for (Endpoint endpoint : endpoints) {
-			String endpointArn = endpoint.getArn();
-			
-			try {
-				boolean success = notificationService.notify(notification, endpointArn);
-				if (success) {
-					endpoint.setAccessedAt(Instant.now());
-					LOGGER.info(String.format("Succesfully sent notification to endpoint '%s' for account '%s'.", endpoint, account));
-				}
-			}
-			catch (EndpointDisabledException e) {
-				LOGGER.debug(String.format("Endpoint `%s` is reported as disabled by AmazonSNS.", endpoint.getArn()), e);
-			}
-		}
-				
-		return ItmsServices.DOWNLOAD_MANIFEST.build(builder -> builder.path("export").path("manifest").path(jwt.toString())); 
+		return export; 
 	}
 }

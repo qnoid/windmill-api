@@ -12,19 +12,25 @@ set +x;assertTrue 200 "${HTTP_CODE}"
 
 echo -e "\nendpoint: /account/{account}/export\n"
 echo "Given valid subscription access; Assert publish 200 OK"
-HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -F "ipa=@$DIR/windmill.ipa" -F "plist=@$DIR/manifest.plist" http://192.168.1.2:8080/account/14810686-4690-4900-ada5-8b0b7338aa39/export -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjU1ZmQyYWMzLTdkZTItNGM2Ny1iMGY4LTc5ZTdjZmEwMjBjMiIsImV4cCI6MzMxMDgxODg1NzQsInR5cCI6ImF0IiwidiI6MX0.yxmDN4QLq0eJeJ1D42ZoIb9HO67o8bRvYXFjDy9bLcs")
+HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -F "plist=@$DIR/manifest.plist" http://192.168.1.2:8080/account/14810686-4690-4900-ada5-8b0b7338aa39/export -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjU1ZmQyYWMzLTdkZTItNGM2Ny1iMGY4LTc5ZTdjZmEwMjBjMiIsImV4cCI6MzMxMDgxODg1NzQsInR5cCI6ImF0IiwidiI6MX0.yxmDN4QLq0eJeJ1D42ZoIb9HO67o8bRvYXFjDy9bLcs")
 
-set +x;assertTrue 200 "${HTTP_CODE}"
+set +x;assertTrue 204 "${HTTP_CODE}"
 
 echo "Given invalid subscription access; Assert POST /export 401 Unauthorized"
-HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -F "ipa=@$DIR/windmill.ipa" -F "plist=@$DIR/manifest.plist" http://192.168.1.2:8080/account/14810686-4690-4900-ada5-8b0b7338aa39/export -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjEwMDAwMDA0OTc5MzE5OTMiLCJleHAiOjMzMTA4MTg4NTc0LCJ0eXAiOiJhdCIsInYiOjF9.ZjrkDhtjH-sNmrerv8bk1zO7AH8rB3oImMSHuPNmSC4")
+HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -F "plist=@$DIR/manifest.plist" http://192.168.1.2:8080/account/14810686-4690-4900-ada5-8b0b7338aa39/export -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjEwMDAwMDA0OTc5MzE5OTMiLCJleHAiOjMzMTA4MTg4NTc0LCJ0eXAiOiJhdCIsInYiOjF9.ZjrkDhtjH-sNmrerv8bk1zO7AH8rB3oImMSHuPNmSC4")
 
 set +x;assertTrue 401 "${HTTP_CODE}"
 
 echo "Given valid subscription access for a different account; Assert 401 Unauthorized"
-HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -F "ipa=@$DIR/windmill.ipa" -F "plist=@$DIR/manifest.plist" http://192.168.1.2:8080/account/5804928c-dd67-4799-a6de-0a30b735f12c/export -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjEwMDAwMDA0OTc5MzE5OTMiLCJleHAiOjMzMTA4MTg4NTc0LCJ0eXAiOiJhdCIsInYiOjF9.ZjrkDhtjH-sNmrerv8bk1zO7AH8rB3oImMSHuPNmSC4")
+HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -F "plist=@$DIR/manifest.plist" http://192.168.1.2:8080/account/5804928c-dd67-4799-a6de-0a30b735f12c/export -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjEwMDAwMDA0OTc5MzE5OTMiLCJleHAiOjMzMTA4MTg4NTc0LCJ0eXAiOiJhdCIsInYiOjF9.ZjrkDhtjH-sNmrerv8bk1zO7AH8rB3oImMSHuPNmSC4")
 
 set +x;assertTrue 401 "${HTTP_CODE}"
+
+echo -e "\nendpoint: /account/{account}/export/{export}\n"
+echo "Given valid subscription access to PATCH export; Assert 200 OK"
+HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -X PATCH http://192.168.1.2:8080/account/14810686-4690-4900-ada5-8b0b7338aa39/export/5416c58d-31d9-4551-8702-40d5f7341349 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjU1ZmQyYWMzLTdkZTItNGM2Ny1iMGY4LTc5ZTdjZmEwMjBjMiIsImV4cCI6MzMxMDgxODg1NzQsInR5cCI6ImF0IiwidiI6MX0.yxmDN4QLq0eJeJ1D42ZoIb9HO67o8bRvYXFjDy9bLcs")
+
+set +x;assertTrue 200 "${HTTP_CODE}"
 
 echo -e "\nendpoint: /account/{account}/exports\n"
 echo "Given valid subscription access; Assert GET exports 200 OK"
