@@ -11,7 +11,6 @@ import javax.ws.rs.ext.Provider;
 
 import org.jboss.logging.Logger;
 
-import io.windmill.windmill.services.exceptions.MissingKeyException;
 import io.windmill.windmill.services.exceptions.UnauthorizedAccountAccessException;
 
 @Dependent
@@ -32,9 +31,6 @@ public class ProcessingExceptionMapper implements ExceptionMapper<ProcessingExce
 		} else if (exception instanceof SubscriptionAuthorizationTokenException) {
 			LOGGER.warn(exception.getMessage());			
 			return Response.status(Status.UNAUTHORIZED).build();
-		} else if (exception instanceof MissingKeyException) {
-			LOGGER.error(exception.getMessage(), exception.getCause());
-			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		} else { 
 			LOGGER.error(exception.getMessage(), exception.getCause());
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();

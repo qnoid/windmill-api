@@ -26,6 +26,8 @@ public interface WindmillEntityManager {
 
 	<T> EntityGraph<T> getEntityGraph(String graphName) throws EJBException;
 
+	<T> void delete(T entity);
+	
     default <T> T findOrProvide(String name, QueryConfiguration<T> queryConfiguration, Provider<T> inCaseOfNoResultException) {
         try {
                 return this.getSingleResult(name, queryConfiguration);
@@ -85,6 +87,11 @@ public interface WindmillEntityManager {
 			@Override
 			public <T> EntityGraph<T> getEntityGraph(String graphName) throws EJBException {
 				return wem.getEntityGraph(graphName);
+			}
+
+			@Override
+			public <T> void delete(T entity) {
+				wem.delete(entity);
 			}
 		};
 	}

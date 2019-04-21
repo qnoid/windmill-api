@@ -24,7 +24,16 @@ The API at `GET /account/{account}/exports` should return a JSON of every `expor
     "title": "{metadata.title}",
     "version": "{metadata.version}",
     "createdAt" {timestamp in epoch seconds},
-    "modifiedAt" {timestamp in epoch seconds},
+    "modifiedAt" {timestamp in epoch seconds}, //optional
     "url": "itms-services://?action=download-manifest&url=https://api.windmill.io/export/manifest/{authentication}"
 }]
 ```
+
+# The API must support deleting an `export`
+	* A secure operation that only the account owner can perform
+	* No need for an active subscription
+	* The `export` database entry must be deleted
+	* The `export` IPA file must be deleted from storage
+	* The `export` manifest file must be deleted from storage
+	* Upon success respond with 204 No Content 
+		* In case the `export` has already been deleted, respond with 410 Gone
