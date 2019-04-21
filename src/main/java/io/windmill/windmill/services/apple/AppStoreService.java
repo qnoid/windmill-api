@@ -1,4 +1,4 @@
-package io.windmill.windmill.services;
+package io.windmill.windmill.services.apple;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,12 +67,7 @@ public class AppStoreService {
 	    }
 	}
 	
-	public static final Logger LOGGER = Logger.getLogger(AppStoreService.class);
-
-	
-	private String secret = System.getenv("WINDMILL_APP_STORE_CONNECT_SHARED_SECRET");
-
-
+	public static final Logger LOGGER = Logger.getLogger(AppStoreService.class);	
 	public static final DateTimeFormatter DATE_FORMATER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss VV");
 	public static final Comparator<JsonValue> EXPIRES_DATE_DESCENDING = new Comparator<JsonValue>() {
 		
@@ -85,22 +80,11 @@ public class AppStoreService {
 		}
 	};
 
-	@FunctionalInterface
-	interface InAppPurchaseReceipt {
-		
-		/**
-		 * The transactions are guaranteed to originate from a valid receipt.
-		 * 
-		 * @param bundle_id the bundle id that the transactions relate to
-		 * @param transactions a list of transactions originating from a valid receipt
-		 *  
-		 * @return
-		 * @throws ReceiptVerificationException in case the given `bundle id` is not known or no transaction exists with a known `product_id` 
-		 * @throws NoRecoredTransactionsException in case of no transactions 
-		 */
-		public AppStoreTransaction process(String bundle_id, JsonArray transactions) throws ReceiptVerificationException, NoRecoredTransactionsException;
-	}
-	
+	private String secret = System.getenv("WINDMILL_APP_STORE_CONNECT_SHARED_SECRET");
+
+    private final Client client = ClientBuilder.newClient();
+
+
 	public AppStoreTransaction receipt(String receiptData, InAppPurchaseReceipt inAppPurchaseReceipt) throws ReceiptVerificationException, NoRecoredTransactionsException 
 	{
 		JsonObject json = this.verify(receiptData);
@@ -110,23 +94,6 @@ public class AppStoreService {
 		JsonArray in_app = receipt.getJsonArray("in_app");
 		
 		return inAppPurchaseReceipt.process(bundle_id, in_app);
-	}
-
-	@FunctionalInterface
-	interface LatestReceipt {
-		
-		/**
-		 * Process the latest receipt information.
-		 * This call should only be called for an existing original transaction on record. 
-		 * 
-		 * @param transactions The transactions are guaranteed to originate from a valid receipt. 
-		 *  
-		 * @return
-		 * @throws ReceiptVerificationException in case no transaction exists with a known `product_id` 
-		 * @throws NoRecoredTransactionsException in case of no transactions 
-		 * @throws NoSubscriptionException in case no subscription exists for the original transaction
-		 */
-		public AppStoreTransaction process(JsonArray transactions) throws ReceiptVerificationException, NoRecoredTransactionsException, NoSubscriptionException;
 	}
 
 	public AppStoreTransaction latest(String receiptData, LatestReceipt receipt) throws ReceiptVerificationException, NoRecoredTransactionsException, NoSubscriptionException 
@@ -180,8 +147,7 @@ public class AppStoreService {
 				 .build().toString();
 
 		try {			
-			Client client = ClientBuilder.newClient();
-			Builder request = client.target(appStoreURL).path("verifyReceipt").request(MediaType.APPLICATION_JSON);
+			Builder request = this.client.target(appStoreURL).path("verifyReceipt").request(MediaType.APPLICATION_JSON);
 
 			Response response = request.post(Entity.entity(httpBody, MediaType.APPLICATION_JSON));
 			

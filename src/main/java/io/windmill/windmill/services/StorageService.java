@@ -12,6 +12,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 
+import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -39,17 +40,21 @@ public class StorageService {
 
     private static final Logger LOGGER = Logger.getLogger(StorageService.class);
     
-    private CryptographicHashFunction hash = SHA256.create();
-
+    private final CryptographicHashFunction hash = SHA256.create();
+    private final Client client = ClientBuilder.newClient();
+    
+    @PreDestroy
+    void destroy() {
+    	this.client.close();
+    }
+    
     /**
      */
 	Status upload(ByteArrayOutputStream outputStream, Signed<URI> signed) throws StorageServiceException {
 
 		byte[] bytes = outputStream.toByteArray();
-		
-		final Client client = ClientBuilder.newClient();
-		
-		Builder request = client.target(signed.value()).request()
+				
+		Builder request = this.client.target(signed.value()).request()
 					.header("content-type", "text/xml plist")
 					.header("x-amz-content-sha256", Hex.encodeHex(hash.hash(bytes)));
 
@@ -62,4 +67,18 @@ public class StorageService {
         
 		return status;
     }
+
+	public Status delete(Signed<URI> signed) throws StorageServiceException {
+		
+		Builder request = this.client.target(signed.value()).request();
+
+		Response response = request.delete();
+		Status status = Status.fromStatusCode(response.getStatus());
+		
+        LOGGER.info(String.format("Delete at '%s' %s.", signed.value(), status));
+
+        Condition.guard(Family.SUCCESSFUL == status.getFamily(), () -> new StorageServiceException(status.getReasonPhrase()));
+        
+		return status;
+	}
 }

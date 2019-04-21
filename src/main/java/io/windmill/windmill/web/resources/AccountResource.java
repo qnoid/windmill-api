@@ -124,7 +124,7 @@ public class AccountResource {
     public Response export(@PathParam("account") final UUID account_identifier, @PathParam("authorization") final String authorization) {
 
     	try {
-			Claims<Export> claims = this.authenticationService.isExport(authorization);
+			Claims<Export> claims = this.authenticationService.isExportAuthorization(authorization);
 			
     		Export export = this.exportService.belongs(account_identifier, UUID.fromString(claims.sub));
     		export.setAccessedAt(Instant.now());
@@ -142,7 +142,7 @@ public class AccountResource {
     	catch(NoSuchElementException | IllegalArgumentException | InvalidSignatureException | InvalidClaimException e) { //UUID.fromString
 			LOGGER.debug(e.getMessage());			    		    		
 			return Response.status(Status.UNAUTHORIZED).build();
-		}    	
+    	}
     }
 	
     /**

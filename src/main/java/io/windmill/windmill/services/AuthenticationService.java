@@ -73,7 +73,7 @@ public class AuthenticationService {
 				.get();
 	}
 
-	public Claims<Subscription> isSubscriptionClaim(String bearer) throws MissingKeyException, InvalidKeyException {
+	public Claims<Subscription> isSubscriptionClaim(String bearer) {
 		JWT<JWS> jwt = this.bearer(bearer);                    
 
 		this.validate(jwt);
@@ -87,7 +87,7 @@ public class AuthenticationService {
 		return claims;
 	}
 	
-	public Claims<SubscriptionAuthorizationToken> isSubscriptionAuthorizationToken(String bearer) throws MissingKeyException, InvalidKeyException {
+	public Claims<SubscriptionAuthorizationToken> isSubscriptionAuthorizationToken(String bearer) {
 		
 		JWT<JWS> jwt = this.bearer(bearer);    	
 		
@@ -117,14 +117,14 @@ public class AuthenticationService {
 		}
 	}
 	
-	private JWT<JWS> jws(final String value) throws MissingKeyException {
+	private JWT<JWS> jws(final String value) {
 		
 		return Optional.ofNullable(value)
 				.map( bearer -> JWT.jws(bearer) )
 				.get();
 	}
 	
-	public Claims<Export> isExport(final String authorization) throws MissingKeyException {
+	public Claims<Export> isExportAuthorization(final String authorization) {
 		
 		JWT<JWS> jwt = this.jws(authorization);
 	

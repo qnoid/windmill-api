@@ -2,6 +2,8 @@ package io.windmill.windmill.services;
 
 import static io.windmill.windmill.persistence.QueryConfiguration.identitifier;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,16 +20,22 @@ import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.persistence.sns.Endpoint;
 import io.windmill.windmill.services.Notification.Messages;
 import io.windmill.windmill.services.exceptions.ExportGoneException;
-import io.windmill.windmill.services.exceptions.NoExportException;
+import io.windmill.windmill.services.exceptions.StorageServiceException;
 
 @ApplicationScoped
 public class ExportService {
+
+    @Inject
+    private AuthenticationService authenticationService;    
 
     @Inject 
     private NotificationService notificationService; 
 
 	@Inject
     private WindmillEntityManager entityManager;
+
+    @Inject 
+    private StorageService storageService;
 
 	@PostConstruct
     private void init() {
@@ -43,7 +51,7 @@ public class ExportService {
 		}		
 	}
 
-	public Export belongs(UUID account_identifier, UUID export_identifier) {
+	public Export belongs(UUID account_identifier, UUID export_identifier) throws ExportGoneException {
 		try {
 			
 			Export export = this.entityManager.getSingleResult("export.belongs_to_account_identifier", new QueryConfiguration<Export>() {
@@ -59,7 +67,7 @@ public class ExportService {
 			
 			return export;
 		} catch (NoResultException e) {
-			throw new NoExportException("An export does not exist for the given account.");
+			throw new ExportGoneException(ExportGoneException.EXPORT_NOT_FOUND, e);
 		}
 	}    
 	
@@ -72,5 +80,16 @@ public class ExportService {
 						query -> query.setParameter("account_identifier", export.getAccount().getIdentifier())); 
 		
 		this.notificationService.notify(notification, endpoints);
+	}
+
+	public void delete(Export export) throws StorageServiceException {
+
+		this.entityManager.delete(export);
+		
+		Instant fiveMinutesFromNow = Instant.now().plus(Duration.ofMinutes(5));
+
+		this.storageService.delete(this.authenticationService.export(export, fiveMinutesFromNow));
+		this.storageService.delete(this.authenticationService.manifest(export, fiveMinutesFromNow));
+		
 	}
 }

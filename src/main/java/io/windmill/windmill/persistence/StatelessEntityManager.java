@@ -62,4 +62,9 @@ public class StatelessEntityManager implements WindmillEntityManager {
 	public <T> EntityGraph<T> getEntityGraph(String graphName) throws EJBException {
 		return (EntityGraph<T>) this.em.getEntityGraph(graphName);
 	}
+	
+	@Override
+	public <T> void delete(T entity) {
+		this.em.remove(entity);
+	}
 }

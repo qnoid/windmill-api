@@ -1,7 +1,6 @@
 package io.windmill.windmill.web;
 
 import java.io.IOException;
-import java.security.InvalidKeyException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.NoSuchElementException;
@@ -23,7 +22,6 @@ import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
 import io.windmill.windmill.services.AuthenticationService;
 import io.windmill.windmill.services.exceptions.InvalidClaimException;
 import io.windmill.windmill.services.exceptions.InvalidSignatureException;
-import io.windmill.windmill.services.exceptions.MissingKeyException;
 import io.windmill.windmill.web.security.Claims;
 
 @RequiresSubscriptionAuthorizationToken
@@ -52,12 +50,13 @@ public class SubscriptionAuthorizationTokenContainerRequestFilter implements Con
 			LOGGER.debug(String.format("Bad syntax for Authorization header. Got: %s", requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)));			
 			requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());    		
     	}
+		catch(NullPointerException e) {
+			LOGGER.error(e.getMessage(), e);
+			requestContext.abortWith(Response.status(Status.INTERNAL_SERVER_ERROR).build());			
+		}		
     	catch(InvalidSignatureException | InvalidClaimException e) {
 			LOGGER.debug(e.getMessage(), e.getCause());    		
     		requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());
-    	} catch (MissingKeyException | InvalidKeyException e) {
-			LOGGER.error(e.getMessage(), e.getCause());
-			requestContext.abortWith(Response.status(Status.INTERNAL_SERVER_ERROR).build());
 		}
 	}
 }
