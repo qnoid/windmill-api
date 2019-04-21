@@ -38,6 +38,7 @@ import io.windmill.windmill.persistence.Subscription.Fetch;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
 import io.windmill.windmill.services.AccountService;
 import io.windmill.windmill.services.AuthenticationService;
+import io.windmill.windmill.services.DeviceService;
 import io.windmill.windmill.services.ExportService;
 import io.windmill.windmill.services.WindmillService;
 import io.windmill.windmill.services.exceptions.AccountServiceException;
@@ -75,6 +76,9 @@ public class AccountResource {
 
     @Inject
     private ExportService exportService;
+
+    @Inject
+    private DeviceService deviceService;
 
     @Inject
     private AuthenticationService authenticationService;    
@@ -234,18 +238,24 @@ public class AccountResource {
      * @return
      */
     @POST
-    @Path("/{account}/device/register")
+    @Path("/{account}/device")
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})  
     @Transactional
-    public Response register(@PathParam("account") final UUID account_identifier, @QueryParam("token") String token) {
+    @RequiresSubscriptionAuthorizationToken    
+    public Response register(@PathParam("account") final UUID account_identifier, @QueryParam("token") String token, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
 
     	if (token == null) {
     		return Response.status(Status.BAD_REQUEST).entity(String.format("Mandatory parameter 'token' is missing.")).type(MediaType.TEXT_PLAIN_TYPE).build();
     	}
 
-    	try {    		
-    		Account account = this.accountService.get(account_identifier);
-    		Device device = this.accountService.registerDevice(account, token);
+		JWT<JWS> jwt = this.authenticationService.bearer(authorization);
+    	
+		Claims<SubscriptionAuthorizationToken> claims = Claims.accessToken(jwt);
+		
+    	try {
+    		Account account = 
+    				this.accountService.belongs(account_identifier, UUID.fromString(claims.sub));
+    		Device device = this.deviceService.updateOrCreate(account, token);
 
     		return Response.ok(device).build();
 		} catch (NoAccountException e) {
@@ -253,6 +263,8 @@ public class AccountResource {
     	} catch (InternalErrorException e) {
 			LOGGER.error(e.getMessage(), e.getCause());
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();    		
+		} catch (NoSubscriptionException e) {
+    		throw new UnauthorizedAccountAccessException(Messages.unauthorized(account_identifier, claims), e);
 		}
     }
 }

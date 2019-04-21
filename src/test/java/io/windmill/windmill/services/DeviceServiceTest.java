@@ -19,7 +19,7 @@ import io.windmill.windmill.persistence.StatelessEntityManager;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 
 
-public class AccountServiceTest {
+public class DeviceServiceTest {
 
 	private static EntityManagerFactory emf;
     private static EntityManager em;
@@ -50,10 +50,11 @@ public class AccountServiceTest {
 		WindmillEntityManager entityManager = new StatelessEntityManager(em);
 		NotificationService notificationService = new NotificationService();
 		AccountService accountService = new AccountService(entityManager, notificationService);
+		DeviceService deviceService = new DeviceService(entityManager, notificationService);
 		
 		Account account = accountService.get(UUID.fromString(account_identifier));
 		String token = "651743ecad5704a088ff54a0234f37a013bd17b3401d1612cb8ded8af1fa2225";
-		Device device = accountService.registerDevice(account, token);
+		Device device = deviceService.updateOrCreate(account, token);
 		
 		assertEquals(token, device.getToken());
 	}
