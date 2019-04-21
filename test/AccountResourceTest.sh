@@ -4,9 +4,9 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 set -e
 
-echo -e "\nendpoint: /account/{account}/device/register\n"
+echo -e "\nendpoint: /account/{account}/device\n"
 echo "Given device token; Assert device register 200 OK"
-HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -X POST http://192.168.1.2:8080/account/5804928c-dd67-4799-a6de-0a30b735f12c/device/register?token=651743ecad5704a088ff54a0234f37a013bd17b3401d1612cb8ded8af1fa2225) 
+HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -X POST http://192.168.1.2:8080/account/14810686-4690-4900-ada5-8b0b7338aa39/device?token=651743ecad5704a088ff54a0234f37a013bd17b3401d1612cb8ded8af1fa2225 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjU1ZmQyYWMzLTdkZTItNGM2Ny1iMGY4LTc5ZTdjZmEwMjBjMiIsImV4cCI6MzMxMDgxODg1NzQsInR5cCI6ImF0IiwidiI6MX0.yxmDN4QLq0eJeJ1D42ZoIb9HO67o8bRvYXFjDy9bLcs") 
 
 set +x;assertTrue 200 "${HTTP_CODE}"
 
