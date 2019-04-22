@@ -35,7 +35,6 @@
         <lib.version.inject>1.0</lib.version.inject>
         <javaee.api.version>8.0</javaee.api.version>
         <aws.java.sdk.version>1.11.505</aws.java.sdk.version>
-        <org.apache.httpcomponents.version>4.5.2</org.apache.httpcomponents.version>
         <apache.commons.io.version>2.4</apache.commons.io.version>
         <apache.commons.configuration.version>2.0</apache.commons.configuration.version>
         <jersey.multipart.version>1.18.1</jersey.multipart.version>
@@ -209,12 +208,6 @@
             <artifactId>aws-java-sdk-sns</artifactId>
             <version>${aws.java.sdk.version}</version>
         </dependency>
-
-		<dependency>
-		  <groupId>org.apache.httpcomponents</groupId>
-		  <artifactId>httpclient</artifactId>
-		  <version>${org.apache.httpcomponents.version}</version>
-		</dependency>
 
         <dependency>
             <groupId>commons-io</groupId>

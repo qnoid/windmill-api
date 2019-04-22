@@ -1,6 +1,5 @@
 package io.windmill.windmill.web.resources;
 
-import java.io.FileNotFoundException;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -146,13 +145,22 @@ public class AccountResource {
     }
 	
     /**
+     * Records an "intent" to distribute an export.
      * 
-     * @precondition the account <b>must</b> exist 
-     * @param account_identifier the account under which to create the given windmill.
-     * @param input a form with the following parameters, <b>plist</b>, <b>ipa</b> where plist is a 'manifest.xml' file and 'ipa' a binary IPA file as produced by the 'xcodebuild exportArchive' command.
-     * @return 
-     * @throws FileNotFoundException 
+     * Calls to this endpoint do not immediately assign an `Export` to the given account. 
+     * Instead, a response 204 No Content is sent alongside a "Content-Location" an a "x-content-identifier" header.
+     * 
+     * Clients must  
+     * 	1. Store the related, exported IPA to the URI as specified by the "Content-Location".
+     * 	2. Perform a PATCH `/{account}/export/{x-content-identifier} to assign the export to the account after which it becomes available.
+     * 
+     * 
+     * @precondition the account <b>must</b> exist
+     * @param account_identifier the account for which you intent to distribute an export.
+     * @param input a form with a <b>plist</b> parameter as the 'manifest.plist' file of an exported IPA as produced by the 'xcodebuild exportArchive' command.
+     * @return  
      * @see <a href="https://developer.apple.com/legacy/library/documentation/Darwin/Reference/ManPages/man1/xcodebuild.1.html">xcodebuild</a>
+     * @see #exports(UUID, String) on accessing the list of exports for the account.
      */
     @POST
     @Path("/{account}/export")

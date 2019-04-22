@@ -174,10 +174,10 @@ public class SubscriptionService {
 	/**
 	 * 
 	 * @param subscription the subscription should exist
-	 * @throws ReceiptVerificationException
-	 * @throws NoRecoredTransactionsException
+	 * @throws ReceiptVerificationException if the verification of the receipt fails; shouldn't happen for a legitimate receipt.
+	 * @throws NoRecoredTransactionsException if there are no recorded transactions for the receipt 
 	 * @throws SubscriptionExpiredException if the subscription has since elapsed
-	 * @throws NoSubscriptionException if the given subscription does not exist
+	 * @throws NoSubscriptionException if a subscription associated with the {@link AppStoreTransaction} for the given receipt does not exist
 	 */
 	public void latest(Subscription subscription)  throws ReceiptVerificationException, NoRecoredTransactionsException, SubscriptionExpiredException, NoSubscriptionException {
 	
@@ -185,6 +185,16 @@ public class SubscriptionService {
 		
 		this.latest(new Receipt(receipt), new Hashtable<>());
 	}
+	
+	/**
+	 * 
+	 * @param receipt
+	 * @param metadata
+	 * @throws ReceiptVerificationException if the verification of the receipt fails; shouldn't happen for a legitimate receipt.
+	 * @throws NoRecoredTransactionsException if there are no recorded transactions for the receipt 
+	 * @throws SubscriptionExpiredException if the subscription has since elapsed
+	 * @throws NoSubscriptionException if a subscription associated with the {@link AppStoreTransaction} for the given receipt does not exist
+	 */
 	public void latest(Receipt receipt, Map<Metadata, Boolean> metadata) throws ReceiptVerificationException, NoRecoredTransactionsException, SubscriptionExpiredException, NoSubscriptionException {
 		
 		String receiptData = receipt.getData();		

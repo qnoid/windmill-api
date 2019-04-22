@@ -31,7 +31,11 @@ import io.windmill.windmill.services.exceptions.ReceiptVerificationException;
 @ApplicationScoped
 public class AppStoreService {
 
-	// href: https://developer.apple.com/library/archive/releasenotes/General/ValidateAppStoreReceipt/Chapters/ValidateRemotely.html#//apple_ref/doc/uid/TP40010573-CH104-SW1
+	/*
+	 * href: https://developer.apple.com/library/archive/releasenotes/General/
+	 * ValidateAppStoreReceipt/Chapters/ValidateRemotely.html#//apple_ref/doc/uid/
+	 * TP40010573-CH104-SW1
+	 */	
 	public enum Status {
 	
 		RECEIPT_VALID(0, "The receipt is valid."),
@@ -80,7 +84,7 @@ public class AppStoreService {
 		}
 	};
 
-	private String secret = System.getenv("WINDMILL_APP_STORE_CONNECT_SHARED_SECRET");
+	private static String APP_STORE_CONNECT_SHARED_SECRET = System.getenv("WINDMILL_APP_STORE_CONNECT_SHARED_SECRET");
 
     private final Client client = ClientBuilder.newClient();
 
@@ -136,13 +140,13 @@ public class AppStoreService {
 	
 	private JsonObject verify(String appStoreURL, String receiptData)  
 	{
-		if (this.secret == null) {
+		if (APP_STORE_CONNECT_SHARED_SECRET == null) {
 			throw new AppStoreServiceException("Secret not found in environment variable 'WINDMILL_APP_STORE_CONNECT_SHARED_SECRET'. Without this secret, it is not possible to verify signatures against the App Store server. Make sure you have set the environment variable and restart the server.");
 		}
 		
 		String httpBody = Json.createObjectBuilder()
 				 .add("receipt-data", receiptData)
-				 .add("password", this.secret)
+				 .add("password", APP_STORE_CONNECT_SHARED_SECRET)
 				 .add("exclude-old-transactions", true)
 				 .build().toString();
 
