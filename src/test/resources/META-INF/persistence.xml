@@ -7,7 +7,8 @@
     <persistence-unit name="windmill" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <class>io.windmill.windmill.persistence.Account</class>
-        <class>io.windmill.windmill.persistence.Export</class> 
+        <class>io.windmill.windmill.persistence.Export</class>
+        <class>io.windmill.windmill.persistence.Metadata</class>  
         <class>io.windmill.windmill.persistence.Device</class>                              
         <class>io.windmill.windmill.persistence.sns.Endpoint</class>
         <class>io.windmill.windmill.persistence.Subscription</class>                                                                   

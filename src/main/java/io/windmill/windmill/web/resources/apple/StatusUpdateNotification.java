@@ -2,7 +2,7 @@ package io.windmill.windmill.web.resources.apple;
 
 import javax.json.JsonObject;
 
-import io.windmill.windmill.persistence.web.Receipt;
+import io.windmill.windmill.web.common.Receipt;
 
 public class StatusUpdateNotification {
 	/**
