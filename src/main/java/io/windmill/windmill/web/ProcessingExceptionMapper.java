@@ -32,7 +32,7 @@ public class ProcessingExceptionMapper implements ExceptionMapper<ProcessingExce
 			LOGGER.warn(exception.getMessage());			
 			return Response.status(Status.UNAUTHORIZED).build();
 		} else { 
-			LOGGER.error(exception.getMessage(), exception.getCause());
+			LOGGER.error(exception.getMessage(), Optional.ofNullable(exception.getCause()).orElse(exception));
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
 	}

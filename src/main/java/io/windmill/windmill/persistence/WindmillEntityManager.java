@@ -5,6 +5,8 @@ import java.util.List;
 import javax.ejb.EJBException;
 import javax.persistence.EntityGraph;
 import javax.persistence.NoResultException;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
 
 import org.jboss.logging.Logger;
 
@@ -18,6 +20,8 @@ public interface WindmillEntityManager {
 
 	<T> T merge(T obj) throws EJBException;
 
+	<T> T getSingleResult(CriteriaQuery<T> query, QueryConfiguration<T> queryConfiguration) throws NoResultException;
+	
 	<T> T getSingleResult(String name, QueryConfiguration<T> queryConfiguration) throws NoResultException;
 
 	<T> List<T> getResultList(String name) throws EJBException;
@@ -27,6 +31,8 @@ public interface WindmillEntityManager {
 	<T> EntityGraph<T> getEntityGraph(String graphName) throws EJBException;
 
 	<T> void delete(T entity);
+	
+	CriteriaBuilder getCriteriaBuilder() throws EJBException;
 	
     default <T> T findOrProvide(String name, QueryConfiguration<T> queryConfiguration, Provider<T> inCaseOfNoResultException) {
         try {
@@ -54,6 +60,23 @@ public interface WindmillEntityManager {
 			@Override
 			public <T> T merge(T obj) throws EJBException {
 				return wem.merge(obj);
+			}
+			
+			
+			@Override
+			public <T> T getSingleResult(CriteriaQuery<T> query, QueryConfiguration<T> queryConfiguration) throws EJBException {
+		    	try {
+		        	return wem.getSingleResult(query, queryConfiguration);
+		    	} catch (EJBException e) {
+		    		Throwable cause = e.getCause();
+			
+		    		if (cause instanceof NoResultException) {
+		    			throw (NoResultException) cause;
+		    		} else {
+		    			LOGGER.error(e.getMessage(), e);		    			
+		    			throw (RuntimeException) e;
+		    		}
+		    	}
 			}
 			
 			@Override
@@ -92,6 +115,11 @@ public interface WindmillEntityManager {
 			@Override
 			public <T> void delete(T entity) {
 				wem.delete(entity);
+			}
+
+			@Override
+			public CriteriaBuilder getCriteriaBuilder() throws EJBException {
+				return wem.getCriteriaBuilder();
 			}
 		};
 	}

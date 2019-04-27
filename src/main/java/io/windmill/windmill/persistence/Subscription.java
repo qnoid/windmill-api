@@ -28,8 +28,12 @@ import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 @NamedQuery(name = "subscription.find_by_identifier", query = "SELECT s FROM Subscription s WHERE s.identifier = :identifier")
 @NamedQuery(name = "subscription.belongs_to_account_identifier", query = "SELECT s FROM Subscription s WHERE s.account.identifier = :account_identifier AND s.identifier = :identifier")
 @NamedEntityGraph(name = "subscription.exports", 
-	attributeNodes = @NamedAttributeNode(value = "account", subgraph = "account"), 
-	subgraphs = @NamedSubgraph(name = "account", attributeNodes = @NamedAttributeNode("exports")))
+	attributeNodes = 
+		@NamedAttributeNode(value = "account", subgraph = "account"), 
+	subgraphs = {
+		@NamedSubgraph(name = "account", attributeNodes = 
+			@NamedAttributeNode(value = "exports")),
+		})
 @NamedEntityGraph(name = "subscription.transaction", attributeNodes = @NamedAttributeNode(value = "transaction"))
 public class Subscription {
 

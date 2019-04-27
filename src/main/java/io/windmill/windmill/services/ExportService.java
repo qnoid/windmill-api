@@ -15,12 +15,17 @@ import javax.persistence.Query;
 import javax.validation.constraints.NotNull;
 
 import io.windmill.windmill.persistence.Export;
+import io.windmill.windmill.persistence.Metadata;
 import io.windmill.windmill.persistence.QueryConfiguration;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.persistence.sns.Endpoint;
 import io.windmill.windmill.services.Notification.Messages;
 import io.windmill.windmill.services.exceptions.ExportGoneException;
 import io.windmill.windmill.services.exceptions.StorageServiceException;
+import io.windmill.windmill.web.common.Build;
+import io.windmill.windmill.web.common.Commit;
+import io.windmill.windmill.web.common.Deployment;
+import io.windmill.windmill.web.common.DistributionSummary;
 
 @ApplicationScoped
 public class ExportService {
@@ -91,5 +96,24 @@ public class ExportService {
 		this.storageService.delete(this.authenticationService.export(export, fiveMinutesFromNow));
 		this.storageService.delete(this.authenticationService.manifest(export, fiveMinutesFromNow));
 		
+	}
+
+	public Export update(UUID export_identifier, Build build) {
+		
+		Export export = this.get(export_identifier);
+		Metadata metadata = export.getMetadata();
+		metadata.setConfiguration(build.getConfiguration());
+		Commit commit = build.getCommit();
+		metadata.setShortSha(commit.getShortSha());
+		metadata.setBranch(commit.getBranch());
+		Deployment deployment = build.getDeployment();
+		metadata.setTarget(deployment.getTarget());
+		DistributionSummary distributionSummary = build.getDistributionSummary();
+		metadata.setCertificateExpiryDate(distributionSummary.getCertificateExpiryDate());
+		metadata.setModifiedAt(Instant.now());
+		
+		this.entityManager.persist(export);
+		
+		return export;
 	}
 }

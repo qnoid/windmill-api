@@ -8,6 +8,8 @@ import javax.enterprise.inject.Default;
 import javax.persistence.EntityGraph;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
 
 @Stateless
 @Default
@@ -33,6 +35,12 @@ public class StatelessEntityManager implements WindmillEntityManager {
 	public <T> T find(Class<T> entityClass, Object primaryKey) throws EJBException {
 		return this.em.find(entityClass, primaryKey);
 	}
+
+	@Override
+    @SuppressWarnings("unchecked")
+	public <T> T getSingleResult(CriteriaQuery<T> query, QueryConfiguration<T> queryConfiguration) throws EJBException {
+		return (T) queryConfiguration.apply(em.createQuery(query)).getSingleResult();
+    }
 
 	@Override
     @SuppressWarnings("unchecked")
@@ -67,4 +75,10 @@ public class StatelessEntityManager implements WindmillEntityManager {
 	public <T> void delete(T entity) {
 		this.em.remove(entity);
 	}
+	
+	@Override
+	public CriteriaBuilder getCriteriaBuilder() throws EJBException {
+		return this.em.getCriteriaBuilder();
+	}
+
 }

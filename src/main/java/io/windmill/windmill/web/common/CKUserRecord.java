@@ -1,4 +1,4 @@
-package io.windmill.windmill.persistence.web;
+package io.windmill.windmill.web.common;
 
 import javax.json.bind.annotation.JsonbProperty;
 

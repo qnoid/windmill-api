@@ -10,6 +10,7 @@ import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbTransient;
 import javax.json.bind.annotation.JsonbTypeAdapter;
 import javax.json.bind.annotation.JsonbTypeSerializer;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -17,6 +18,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.UriBuilder;
@@ -24,6 +26,7 @@ import javax.ws.rs.core.UriBuilder;
 import io.windmill.windmill.web.CustomJsonUUIDSerializer;
 import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 import io.windmill.windmill.web.ManifestJsonbSerializer;
+import io.windmill.windmill.web.MetadataJsonbSerializer;
 
 @Entity
 @NamedQuery(name = "export.with_account_identifier", query = "SELECT e FROM Export e WHERE e.account.identifier = :account_identifier ORDER BY e.title ASC")
@@ -32,7 +35,7 @@ import io.windmill.windmill.web.ManifestJsonbSerializer;
 @NamedQuery(name = "export.find_by_bundle", query = "SELECT e FROM Export e WHERE e.bundle = :bundle")
 public class Export {
 	
-    public static class Manifest {
+	public static class Manifest {
     	
     	final private String name = "manifest.plist";
         private Export export;
@@ -100,6 +103,10 @@ public class Export {
     @Transient
 	private Manifest manifest;
 
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
+    @NotNull
+    private Metadata metadata;
+
     /**
      * 
      */
@@ -107,6 +114,7 @@ public class Export {
     {
     	this.identifier = UUID.randomUUID();
     	this.account = new Account();
+    	this.metadata = new Metadata();
         this.createdAt = Instant.now();
     }
     
@@ -203,6 +211,15 @@ public class Export {
 
 	public void setAccount(Account account) {
 		this.account = account;
+	}
+
+	@JsonbTypeSerializer(MetadataJsonbSerializer.class)
+	public Metadata getMetadata() {
+		return metadata;
+	}
+
+	public void setMetadata(Metadata metadata) {
+		this.metadata = metadata;
 	}
 
 	public boolean hasAccount(Account that) {

@@ -31,8 +31,6 @@ import io.windmill.windmill.persistence.Subscription.Metadata;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.persistence.apple.AppStoreTransaction;
 import io.windmill.windmill.persistence.apple.User;
-import io.windmill.windmill.persistence.web.CKUserRecord;
-import io.windmill.windmill.persistence.web.Receipt;
 import io.windmill.windmill.services.apple.AppStoreService;
 import io.windmill.windmill.services.apple.InAppPurchaseReceipt;
 import io.windmill.windmill.services.apple.LatestReceipt;
@@ -40,6 +38,8 @@ import io.windmill.windmill.services.exceptions.NoRecoredTransactionsException;
 import io.windmill.windmill.services.exceptions.NoSubscriptionException;
 import io.windmill.windmill.services.exceptions.ReceiptVerificationException;
 import io.windmill.windmill.services.exceptions.SubscriptionExpiredException;
+import io.windmill.windmill.web.common.CKUserRecord;
+import io.windmill.windmill.web.common.Receipt;
 
 @RequestScoped
 public class SubscriptionService {

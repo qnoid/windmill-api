@@ -26,6 +26,10 @@ public class ManifestJsonbSerializer implements JsonbSerializer<Export.Manifest>
 	@Override
 	public void serialize(Manifest manifest, JsonGenerator generator, SerializationContext ctx) {
 		
+		if (authenticationService == null) {
+			return;
+		}
+		
 		try {
 			Export export = manifest.getExport();
 			JWT<JWS> jwt = this.authenticationService.jwt(export);			

@@ -50,6 +50,7 @@ import io.windmill.windmill.services.exceptions.StorageServiceException;
 import io.windmill.windmill.services.exceptions.UnauthorizedAccountAccessException;
 import io.windmill.windmill.services.exceptions.UnauthorizedAccountAccessException.Messages;
 import io.windmill.windmill.web.RequiresSubscriptionAuthorizationToken;
+import io.windmill.windmill.web.common.Build;
 import io.windmill.windmill.web.security.Claims;
 import io.windmill.windmill.web.security.JWT;
 import io.windmill.windmill.web.security.JWT.JWS;
@@ -90,7 +91,7 @@ public class AccountResource {
     @Produces(MediaType.APPLICATION_JSON)    
     @RequiresSubscriptionAuthorizationToken
     @Transactional
-    public Response exports(@PathParam("account") final UUID account_identifier, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
+    public Response list(@PathParam("account") final UUID account_identifier, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
 
 		JWT<JWS> jwt = this.authenticationService.bearer(authorization);
     	
@@ -120,7 +121,7 @@ public class AccountResource {
     @Path("/{account}/export/{authorization}")
     @Produces(MediaType.TEXT_XML)
     @Transactional
-    public Response export(@PathParam("account") final UUID account_identifier, @PathParam("authorization") final String authorization) {
+    public Response download(@PathParam("account") final UUID account_identifier, @PathParam("authorization") final String authorization) {
 
     	try {
 			Claims<Export> claims = this.authenticationService.isExportAuthorization(authorization);
@@ -160,7 +161,7 @@ public class AccountResource {
      * @param input a form with a <b>plist</b> parameter as the 'manifest.plist' file of an exported IPA as produced by the 'xcodebuild exportArchive' command.
      * @return  
      * @see <a href="https://developer.apple.com/legacy/library/documentation/Darwin/Reference/ManPages/man1/xcodebuild.1.html">xcodebuild</a>
-     * @see #exports(UUID, String) on accessing the list of exports for the account.
+     * @see #list(UUID, String) on accessing the list of exports for the account.
      */
     @POST
     @Path("/{account}/export")
@@ -168,7 +169,7 @@ public class AccountResource {
     @Produces({MediaType.TEXT_PLAIN})
     @Transactional
     @RequiresSubscriptionAuthorizationToken
-    public Response export(@PathParam("account") final UUID account_identifier, final Manifest manifest, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
+    public Response create(@PathParam("account") final UUID account_identifier, final Manifest manifest, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
 
 		JWT<JWS> jwt = this.authenticationService.bearer(authorization);
     	
@@ -207,10 +208,11 @@ public class AccountResource {
     
 	@PATCH
 	@Path("/{account}/export/{export}")
+    @Consumes(MediaType.APPLICATION_JSON)	
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Transactional
     @RequiresSubscriptionAuthorizationToken
-	public Response update(@PathParam("account") final UUID account_identifier, @PathParam("export") final UUID export_identifier, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
+	public Response update(@PathParam("account") final UUID account_identifier, @PathParam("export") final UUID export_identifier, Build build, @HeaderParam(HttpHeaders.AUTHORIZATION) final String authorization) {
 		
 		JWT<JWS> jwt = this.authenticationService.bearer(authorization);
     	
@@ -220,7 +222,7 @@ public class AccountResource {
     		Account account = 
     				this.accountService.belongs(account_identifier, UUID.fromString(claims.sub));
 
-			Export export = this.exportService.get(export_identifier);
+			Export export = this.exportService.update(export_identifier, build);
 			
 			Condition.guard(export.account == null || export.hasAccount(account), 
 					() -> new AccountServiceException("io.windmill.api: error: The bundle identifier is already used by another account."));
