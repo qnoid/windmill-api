@@ -40,7 +40,7 @@ public class AccountServiceTest {
 	@Before
 	public void before() {
 		Account account = new Account(UUID.fromString(account_identifier));
-		Export export = new Export("io.windmill.windmill", 1.0, "windmill");
+		Export export = new Export("io.windmill.windmill", "1.0", "windmill");
 		account.add(export);
 		Metadata metadata = new Metadata();
 		metadata.setTarget("12.2");

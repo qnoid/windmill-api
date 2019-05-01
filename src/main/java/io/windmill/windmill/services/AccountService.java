@@ -95,7 +95,7 @@ public class AccountService {
 	}
 	
 	public Export updateOrCreate(Account account, String export_bundle, String export_title,
-			Double export_version) throws AccountServiceException, NoAccountException {
+			String export_version) throws AccountServiceException, NoAccountException {
 
 		try {
 			Export export = this.entityManager.findOrProvide("export.find_by_bundle", query -> 

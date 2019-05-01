@@ -39,7 +39,7 @@ public class Manifest {
 		XMLPropertyListConfiguration items = xmlPropertyListConfiguration.get(XMLPropertyListConfiguration.class, "items");
 
 		String bundle_identifier = items.getString("metadata.bundle-identifier");
-        Double bundle_version = items.getDouble("metadata.bundle-version");
+        String bundle_version = items.getString("metadata.bundle-version");
         String bundle_title = items.getString("metadata.title");
 
 		return new Manifest(buffer, bundle_identifier, bundle_version, bundle_title);
@@ -51,12 +51,12 @@ public class Manifest {
     private String bundle;
 
 	@NotNull
-    private Double version;
+    private String version;
 
     @NotNull
 	private String title;
     
-	public Manifest(ByteArrayOutputStream buffer, String bundle, Double version, String title) {
+	public Manifest(ByteArrayOutputStream buffer, String bundle, String version, String title) {
 		this.buffer = buffer;
 		this.bundle = bundle;
 		this.version = version;
@@ -67,7 +67,7 @@ public class Manifest {
 		return this.bundle;
 	}
 
-	public Double getVersion() {
+	public String getVersion() {
 		return this.version;
 	}
 

@@ -15,7 +15,7 @@ public class ExportTest {
 		final UUID export_identifier = UUID.fromString("18658c6f-91aa-4fe6-a9ec-70f349057aa5");
 		
 		
-		Export export = new Export("bundle", 1.0, "title");
+		Export export = new Export("bundle", "1.0", "title");
 		export.setIdentifier(export_identifier);
 		
 		export.account = new Account(account_identifier);

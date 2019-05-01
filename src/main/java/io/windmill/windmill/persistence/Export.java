@@ -81,7 +81,7 @@ public class Export {
     private String bundle;
 
 	@NotNull
-    private Double version;
+    private String version;
 
     @NotNull
     private String title;
@@ -121,7 +121,7 @@ public class Export {
     /**
      * 
      */
-    public Export(String bundle, Double version, String title)
+    public Export(String bundle, String version, String title)
     {
     	this.identifier = UUID.randomUUID();    	
     	this.bundle = bundle;
@@ -162,11 +162,11 @@ public class Export {
 		this.bundle = bundle;
 	}
 
-	public Double getVersion() {
+	public String getVersion() {
 		return version;
 	}
 
-	public void setVersion(Double version) {
+	public void setVersion(String version) {
 		this.version = version;
 	}
 

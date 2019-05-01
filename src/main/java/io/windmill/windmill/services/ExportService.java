@@ -22,6 +22,7 @@ import io.windmill.windmill.persistence.sns.Endpoint;
 import io.windmill.windmill.services.Notification.Messages;
 import io.windmill.windmill.services.exceptions.ExportGoneException;
 import io.windmill.windmill.services.exceptions.StorageServiceException;
+import io.windmill.windmill.web.common.ApplicationProperties;
 import io.windmill.windmill.web.common.Build;
 import io.windmill.windmill.web.common.Commit;
 import io.windmill.windmill.web.common.Deployment;
@@ -106,6 +107,9 @@ public class ExportService {
 		Commit commit = build.getCommit();
 		metadata.setShortSha(commit.getShortSha());
 		metadata.setBranch(commit.getBranch());
+		ApplicationProperties applicationProperties = build.getApplicationProperties();
+		metadata.setBundleDisplayName(applicationProperties.getBundleDisplayName());
+		metadata.setBundleVersion(applicationProperties.getBundleVersion());
 		Deployment deployment = build.getDeployment();
 		metadata.setTarget(deployment.getTarget());
 		DistributionSummary distributionSummary = build.getDistributionSummary();

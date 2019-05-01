@@ -22,19 +22,24 @@ public class Metadata {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+	@Column(name="deployment_target")
 	@NotNull
-	private String target;
+	private String deploymentTarget;
 	
+	@Column(name="commit_branch")
 	@NotNull
-	private String branch;
+	private String commitBranch;
 	
+	@Column(name="commit_shortSha")
 	@NotNull
-	private String shortSha;
+	private String commitShortSha;
 	
+	@Column(name="build_configuration")
 	@Enumerated(EnumType.STRING)
 	@NotNull
 	private Configuration configuration;
 
+	@Column(name="distribution_summary_certificate_expiry_date")
     @NotNull
     private Instant certificateExpiryDate;
 
@@ -44,6 +49,14 @@ public class Metadata {
 	
     @Column(name="modified_at")
     private Instant modifiedAt;
+
+	@Column(name="application_properties_bundle_display_name")
+	@NotNull
+	private String bundleDisplayName;
+
+	@Column(name="application_properties_bundle_version")
+	@NotNull
+	private String bundleVersion;
 
 	public Metadata() {
 		super();
@@ -60,29 +73,45 @@ public class Metadata {
 	}
 
 	public String getTarget() {
-		return target;
+		return deploymentTarget;
 	}
 	
 	public void setTarget(String target) {
-		this.target = target;
+		this.deploymentTarget = target;
 	}
 	
 	public String getBranch() {
-		return branch;
+		return commitBranch;
 	}
 	
 	public void setBranch(String branch) {
-		this.branch = branch;
+		this.commitBranch = branch;
 	}
 	
 	public String getShortSha() {
-		return shortSha;
+		return commitShortSha;
 	}
 	
 	public void setShortSha(String shortSha) {
-		this.shortSha = shortSha;
+		this.commitShortSha = shortSha;
 	}
 	
+	public String getBundleDisplayName() {
+		return bundleDisplayName;
+	}
+
+	public void setBundleDisplayName(String bundleDisplayName) {
+		this.bundleDisplayName = bundleDisplayName;
+	}
+
+	public String getBundleVersion() {
+		return bundleVersion;
+	}
+
+	public void setBundleVersion(String bundleVersion) {
+		this.bundleVersion = bundleVersion;		
+	}
+
 	public Configuration getConfiguration() {
 		return configuration;
 	}

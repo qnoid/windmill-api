@@ -4,13 +4,15 @@ public class Build {
 
 	private final Configuration configuration;
 	private final Commit commit;
+	private final ApplicationProperties applicationProperties;	
 	private final Deployment deployment;
 	private final DistributionSummary distributionSummary;
 
-	public Build(Configuration configuration, Commit commit, Deployment deployment, DistributionSummary distributionSummary) 
+	public Build(Configuration configuration, Commit commit, ApplicationProperties applicationProperties, Deployment deployment, DistributionSummary distributionSummary) 
 	{
 		this.configuration = configuration;
 		this.commit = commit;
+		this.applicationProperties = applicationProperties;
 		this.deployment = deployment;
 		this.distributionSummary = distributionSummary;
 	}
@@ -21,6 +23,10 @@ public class Build {
 
 	public Commit getCommit() {
 		return commit;
+	}
+
+	public ApplicationProperties getApplicationProperties() {
+		return applicationProperties;
 	}
 
 	public Deployment getDeployment() {
