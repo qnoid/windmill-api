@@ -82,7 +82,7 @@ public class ExportResource {
 	
 	@DELETE
     @Path("/{export}")
-    @Produces(MediaType.TEXT_XML)
+    @Produces(MediaType.TEXT_PLAIN)
     @Transactional
     @RequiresSubscriptionClaim
     public Response delete(@PathParam("export") final UUID export_identifier, @HeaderParam("authorization") final String bearer) {

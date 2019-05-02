@@ -13,6 +13,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -161,8 +162,7 @@ public class AppStoreService {
 			} catch (IOException e) {
 				throw new AppStoreServiceException(e);
 			}
-
-		} catch (NullPointerException | DateTimeParseException e) {
+		} catch (NullPointerException | DateTimeParseException | ProcessingException e) {
 			throw new AppStoreServiceException(e);
 		}		
 	}

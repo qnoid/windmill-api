@@ -61,7 +61,7 @@ public class StorageService {
 		Response response = request.put(Entity.entity(new ByteArrayInputStream(bytes), MediaType.APPLICATION_OCTET_STREAM_TYPE));
 		Status status = Status.fromStatusCode(response.getStatus());
 		response.close();
-        LOGGER.info(String.format("Upload at '%s' %s.", signed.value(), status));
+        LOGGER.debug(String.format("Upload at '%s' %s.", signed.value(), status));
 
         Condition.guard(Family.SUCCESSFUL == status.getFamily(), () -> new StorageServiceException(status.getReasonPhrase()));
         
@@ -75,7 +75,7 @@ public class StorageService {
 		Response response = request.delete();
 		Status status = Status.fromStatusCode(response.getStatus());
 		response.close();
-        LOGGER.info(String.format("Delete at '%s' %s.", signed.value(), status));
+        LOGGER.debug(String.format("Delete at '%s' %s.", signed.value(), status));
 
         Condition.guard(Family.SUCCESSFUL == status.getFamily(), () -> new StorageServiceException(status.getReasonPhrase()));
         

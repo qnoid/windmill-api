@@ -104,7 +104,6 @@ public class Export {
 	private Manifest manifest;
 
     @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
-    @NotNull
     private Metadata metadata;
 
     /**

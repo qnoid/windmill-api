@@ -74,7 +74,7 @@ public class WindmillService {
 		Instant fifteenMinutesFromNow = Instant.now().plus(Duration.ofMinutes(15));
 		
 		Signed<URI> uri = this.authenticationService.manifest(account, export, fifteenMinutesFromNow);
-		System.out.println(storageService.upload(byteArrayOutputStream, uri));
+		storageService.upload(byteArrayOutputStream, uri);
 
 		return export; 
 	}

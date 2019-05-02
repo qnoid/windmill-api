@@ -144,7 +144,7 @@ public class NotificationService {
 				boolean success = notify(notification, endpointArn);
 				if (success) {
 					endpoint.setAccessedAt(Instant.now());
-					WindmillService.LOGGER.info(String.format("Succesfully sent notification to endpoint '%s'.", endpoint));
+					WindmillService.LOGGER.debug(String.format("Succesfully sent notification to endpoint '%s'.", endpoint));
 				}
 			}
 			catch (EndpointDisabledException e) {

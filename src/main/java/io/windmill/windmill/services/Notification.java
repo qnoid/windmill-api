@@ -5,6 +5,8 @@ import java.util.Optional;
 import javax.json.Json;
 import javax.json.JsonObject;
 
+import io.windmill.windmill.services.common.ContentType;
+
 public class Notification {
 	
 	public static class Messages {
@@ -19,7 +21,17 @@ public class Notification {
 			
 			return value.toString();
 		}
-		
+
+		public static String contentAvailable(ContentType type) {
+			 JsonObject value = Json.createObjectBuilder()
+				.add("aps", Json.createObjectBuilder()
+					.add("content-available", 1))
+				.add("type", type.name().toLowerCase())
+				.build();
+				
+				return value.toString();
+			}
+
 		public static String on(Platform platform, String message) {
 			return platform.message(message);
 		}

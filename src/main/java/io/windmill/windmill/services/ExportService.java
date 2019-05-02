@@ -5,6 +5,7 @@ import static io.windmill.windmill.persistence.QueryConfiguration.identitifier;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.annotation.PostConstruct;
@@ -20,6 +21,7 @@ import io.windmill.windmill.persistence.QueryConfiguration;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.persistence.sns.Endpoint;
 import io.windmill.windmill.services.Notification.Messages;
+import io.windmill.windmill.services.common.ContentType;
 import io.windmill.windmill.services.exceptions.ExportGoneException;
 import io.windmill.windmill.services.exceptions.StorageServiceException;
 import io.windmill.windmill.web.common.ApplicationProperties;
@@ -79,12 +81,19 @@ public class ExportService {
 	
 	public void notify(Export export) 
 	{
-		String notification = Messages.of("New build", String.format("%s %s is now available to install.", export.getTitle(), export.getVersion()));
-		
+		String notification = Messages.of("New build", 
+				String.format("%s %s (%s) is now available to install.", 
+						export.getTitle(), 
+						export.getVersion(), 
+						export.getMetadata().getShortSha()));
+
+		String contentAvailable = Messages.contentAvailable(ContentType.EXPORT);
+
 		List<Endpoint> endpoints = 
 				this.entityManager.getResultList("endpoint.find_by_account_identifier", 
 						query -> query.setParameter("account_identifier", export.getAccount().getIdentifier())); 
 		
+		this.notificationService.notify(contentAvailable, endpoints);
 		this.notificationService.notify(notification, endpoints);
 	}
 
@@ -102,7 +111,7 @@ public class ExportService {
 	public Export update(UUID export_identifier, Build build) {
 		
 		Export export = this.get(export_identifier);
-		Metadata metadata = export.getMetadata();
+		Metadata metadata = Optional.ofNullable(export.getMetadata()).orElse(new Metadata());
 		metadata.setConfiguration(build.getConfiguration());
 		Commit commit = build.getCommit();
 		metadata.setShortSha(commit.getShortSha());
@@ -115,6 +124,7 @@ public class ExportService {
 		DistributionSummary distributionSummary = build.getDistributionSummary();
 		metadata.setCertificateExpiryDate(distributionSummary.getCertificateExpiryDate());
 		metadata.setModifiedAt(Instant.now());
+		export.setMetadata(metadata);
 		
 		this.entityManager.persist(export);
 		
