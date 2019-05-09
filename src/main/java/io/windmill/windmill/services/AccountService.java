@@ -104,6 +104,10 @@ public class AccountService {
 			Condition.guard(export.account == null || export.hasAccount(account), 
 					() -> new AccountServiceException("io.windmill.api: error: The bundle identifier is already used by another account."));
 			
+			export.setBundle(export_bundle);
+			export.setTitle(export_title);
+			export.setVersion(export_version);
+			
 			this.entityManager.persist(export);
 			
 			return export;		

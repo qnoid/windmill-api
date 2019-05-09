@@ -6,7 +6,7 @@ set -e
 
 echo -e "\nendpoint: /export/{authentication}\n"
 echo "Given authentication; Assert export 200 OK"
-HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -L http://192.168.1.2:8080/export/manifest/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NDE2YzU4ZC0zMWQ5LTQ1NTEtODcwMi00MGQ1ZjczNDEzNDkiLCJ0eXAiOiJleHAiLCJ2IjoxfQ.usFrvICHswn03twstjCYwiMcVFkB3q5JAeMxfpu_4kM)
+HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -L http://192.168.1.2:8080/export/manifest/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZWZkOWY4NC1hOGQxLTQ4NDItODU1Yy1jNDQ2ZjU5NzZlMTYiLCJ0eXAiOiJleHAiLCJ2IjoxfQ.WT8Kx8r9MuJDzAEj_Xz4OSgqpVAIyh1oVS9Ry3P3jCE)
 
 set +x;assertTrue 200 "${HTTP_CODE}"
 

@@ -48,7 +48,8 @@ public class BuildProvider implements MessageBodyReader<Build> {
 			Configuration configuration = Configuration.valueOf(jsonObject.getString("configuration").toUpperCase());
 			JsonObject commit = jsonObject.getJsonObject("commit");
 			String branch = commit.getString("branch");
-			String shortSha = commit.getString("shortSha");					
+			String shortSha = commit.getString("shortSha");
+			long date = commit.getJsonNumber("date").longValueExact();;					
 			JsonObject applicationProperties = jsonObject.getJsonObject("applicationProperties");
 			String bundleDisplayName = applicationProperties.getString("bundleDisplayName");
 			String bundleVersion = applicationProperties.getString("bundleVersion");					
@@ -57,7 +58,7 @@ public class BuildProvider implements MessageBodyReader<Build> {
 			JsonObject distributionSummary = jsonObject.getJsonObject("distributionSummary");			
 			long certificateExpiryDate = distributionSummary.getJsonNumber("certificateExpiryDate").longValueExact();
 
-			return new Build(configuration, new Commit(shortSha, branch), new ApplicationProperties(bundleDisplayName, bundleVersion), new Deployment(target), new DistributionSummary(Instant.ofEpochSecond(certificateExpiryDate)));
+			return new Build(configuration, new Commit(shortSha, branch, Instant.ofEpochSecond(date)), new ApplicationProperties(bundleDisplayName, bundleVersion), new Deployment(target), new DistributionSummary(Instant.ofEpochSecond(certificateExpiryDate)));
 		} catch (java.lang.ClassCastException e) {
 			throw new ServerErrorException(Status.INTERNAL_SERVER_ERROR, e);
 		}

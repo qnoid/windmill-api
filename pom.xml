@@ -39,7 +39,7 @@
         <apache.commons.configuration.version>2.0</apache.commons.configuration.version>
         <jersey.multipart.version>1.18.1</jersey.multipart.version>
         <mustache.compiler.version>0.9.6</mustache.compiler.version>
-        <postgres.driver.version>42.2.1</postgres.driver.version>
+        <postgres.driver.version>42.2.5</postgres.driver.version>
 
 		<!--  test scoped version -->
 		<junit.junit.version>4.8.2</junit.junit.version>		

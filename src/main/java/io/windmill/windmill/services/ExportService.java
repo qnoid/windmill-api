@@ -116,6 +116,7 @@ public class ExportService {
 		Commit commit = build.getCommit();
 		metadata.setShortSha(commit.getShortSha());
 		metadata.setBranch(commit.getBranch());
+		metadata.setDate(commit.getDate());
 		ApplicationProperties applicationProperties = build.getApplicationProperties();
 		metadata.setBundleDisplayName(applicationProperties.getBundleDisplayName());
 		metadata.setBundleVersion(applicationProperties.getBundleVersion());
@@ -123,7 +124,6 @@ public class ExportService {
 		metadata.setTarget(deployment.getTarget());
 		DistributionSummary distributionSummary = build.getDistributionSummary();
 		metadata.setCertificateExpiryDate(distributionSummary.getCertificateExpiryDate());
-		metadata.setModifiedAt(Instant.now());
 		export.setMetadata(metadata);
 		
 		this.entityManager.persist(export);

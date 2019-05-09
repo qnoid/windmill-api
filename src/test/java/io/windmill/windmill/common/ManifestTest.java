@@ -33,7 +33,7 @@ public class ManifestTest {
 		Manifest metadata = Manifest.manifest(in);
 		
 		Assert.assertEquals("io.windmill.windmill", metadata.getBundle());
-		Assert.assertEquals(1.0, metadata.getVersion());
+		Assert.assertEquals("1.0", metadata.getVersion());
 		Assert.assertEquals("windmill", metadata.getTitle());
 	}
 	

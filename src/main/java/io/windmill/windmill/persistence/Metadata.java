@@ -34,6 +34,10 @@ public class Metadata {
 	@NotNull
 	private String commitShortSha;
 	
+	@Column(name="commit_date")
+	@NotNull
+	private Instant commitDate;
+	
 	@Column(name="build_configuration")
 	@Enumerated(EnumType.STRING)
 	@NotNull
@@ -43,13 +47,6 @@ public class Metadata {
     @NotNull
     private Instant certificateExpiryDate;
 
-    @Column(name="created_at")
-    @NotNull
-    private Instant createdAt;
-	
-    @Column(name="modified_at")
-    private Instant modifiedAt;
-
 	@Column(name="application_properties_bundle_display_name")
 	@NotNull
 	private String bundleDisplayName;
@@ -58,10 +55,10 @@ public class Metadata {
 	@NotNull
 	private String bundleVersion;
 
+
 	public Metadata() {
 		super();
 		this.configuration = Configuration.RELEASE;
-		this.createdAt = Instant.now();
 	}
 
 	public Long getId() {
@@ -96,6 +93,16 @@ public class Metadata {
 		this.commitShortSha = shortSha;
 	}
 	
+	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
+	public Instant getDate() {
+		return commitDate;
+	}
+	
+	public void setDate(Instant date) {
+		this.commitDate = date;		
+	}
+
+	
 	public String getBundleDisplayName() {
 		return bundleDisplayName;
 	}
@@ -129,23 +136,6 @@ public class Metadata {
 		this.certificateExpiryDate = certificateExpiryDate;
 	}
 
-	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)		
-	public Instant getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(Instant createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	@JsonbTypeAdapter(JsonbAdapterInstantToEpochSecond.class)
-	public Instant getModifiedAt() {
-		return modifiedAt;
-	}
-
-	public void setModifiedAt(Instant modifiedAt) {
-		this.modifiedAt = modifiedAt;
-	}
 
 	@Override
 	public int hashCode() {

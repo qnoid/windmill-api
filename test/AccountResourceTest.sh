@@ -28,7 +28,7 @@ set +x;assertTrue 401 "${HTTP_CODE}"
 
 echo -e "\nendpoint: /account/{account}/export/{export}\n"
 echo "Given valid subscription access to PATCH export; Assert 200 OK"
-HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -X PATCH http://192.168.1.2:8080/account/14810686-4690-4900-ada5-8b0b7338aa39/export/5416c58d-31d9-4551-8702-40d5f7341349 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjU1ZmQyYWMzLTdkZTItNGM2Ny1iMGY4LTc5ZTdjZmEwMjBjMiIsImV4cCI6MzMxMDgxODg1NzQsInR5cCI6ImF0IiwidiI6MX0.yxmDN4QLq0eJeJ1D42ZoIb9HO67o8bRvYXFjDy9bLcs")
+HTTP_CODE=$(set -x;curl -s -o /dev/null -w "%{http_code}" -X PATCH http://192.168.1.2:8080/account/14810686-4690-4900-ada5-8b0b7338aa39/export/fefd9f84-a8d1-4842-855c-c446f5976e16 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMlZqY21WMCIsInN1YiI6IjU1ZmQyYWMzLTdkZTItNGM2Ny1iMGY4LTc5ZTdjZmEwMjBjMiIsImV4cCI6MzMxMDgxODg1NzQsInR5cCI6ImF0IiwidiI6MX0.yxmDN4QLq0eJeJ1D42ZoIb9HO67o8bRvYXFjDy9bLcs" -d '{"configuration": "RELEASE","commit": {"shortSha": "e8fb1cf","branch": "master", "date":1540414800},"applicationProperties": {"bundleDisplayName": "Windmill","bundleVersion": "1.2"},"deployment": {"target": "12.2"},"distributionSummary": {"certificateExpiryDate": 1540414800}}' -H "Content-type: application/json")
 
 set +x;assertTrue 200 "${HTTP_CODE}"
 

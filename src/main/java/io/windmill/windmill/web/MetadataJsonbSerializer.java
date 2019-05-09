@@ -16,6 +16,7 @@ public class MetadataJsonbSerializer implements JsonbSerializer<Metadata> {
 			.writeStartObject("commit")
 				.write("branch", metadata.getBranch())
 				.write("shortSha", metadata.getShortSha())
+				.write("date", metadata.getDate().getEpochSecond())
 			.writeEnd()
 			.writeStartObject("applicationProperties")
 				.write("bundleDisplayName", metadata.getBundleDisplayName())
