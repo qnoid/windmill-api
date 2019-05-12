@@ -41,9 +41,7 @@ import io.windmill.windmill.services.DeviceService;
 import io.windmill.windmill.services.ExportService;
 import io.windmill.windmill.services.WindmillService;
 import io.windmill.windmill.services.exceptions.AccountServiceException;
-import io.windmill.windmill.services.exceptions.ExportGoneException;
 import io.windmill.windmill.services.exceptions.InvalidClaimException;
-import io.windmill.windmill.services.exceptions.InvalidSignatureException;
 import io.windmill.windmill.services.exceptions.NoAccountException;
 import io.windmill.windmill.services.exceptions.NoSubscriptionException;
 import io.windmill.windmill.services.exceptions.StorageServiceException;
@@ -117,36 +115,8 @@ public class AccountResource {
         }    	
     }
 
-	@GET
-    @Path("/{account}/export/{authorization}")
-    @Produces(MediaType.TEXT_XML)
-    @Transactional
-    public Response download(@PathParam("account") final UUID account_identifier, @PathParam("authorization") final String authorization) {
-
-    	try {
-			Claims<Export> claims = this.authenticationService.isExportAuthorization(authorization);
-			
-    		Export export = this.exportService.belongs(account_identifier, UUID.fromString(claims.sub));
-    		export.setAccessedAt(Instant.now());
-    		          		
-			Instant fifteenMinutesFromNow = Instant.now().plus(Duration.ofMinutes(15));
-			
-			Signed<URI> url = this.authenticationService.export(export, fifteenMinutesFromNow);
-
-			return Response.seeOther(url.value()).build();
-    	}
-    	catch (ExportGoneException e) {
-			LOGGER.debug(e.getMessage());			    		
-    		return Response.status(Status.GONE).build();
-    	}
-    	catch(NoSuchElementException | IllegalArgumentException | InvalidSignatureException | InvalidClaimException e) { //UUID.fromString
-			LOGGER.debug(e.getMessage());			    		    		
-			return Response.status(Status.UNAUTHORIZED).build();
-    	}
-    }
-	
     /**
-     * Records an "intent" to distribute an export.
+     * Records an export with the "intent" to distribute it.
      * 
      * Calls to this endpoint do not immediately assign an `Export` to the given account. 
      * Instead, a response 204 No Content is sent alongside a "Content-Location" an a "x-content-identifier" header.

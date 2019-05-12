@@ -3,6 +3,7 @@ package io.windmill.windmill.web.resources;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -40,6 +41,11 @@ import io.windmill.windmill.web.security.Signed;
 public class ExportResource {
 
 	public static final Logger LOGGER = Logger.getLogger(ExportResource.class);
+	private static final String string = 
+			"Export access expired %s minutes ago at: %s. "
+			+ "Windmill tries to keep access to an export up-to-date on a best effort basis. "
+			+ "e.g. the list of exports on Windmill on the iPhone should refresh when the view is loaded, when a new build is pushed or when a subscription renews on a best effort basis."
+			+ "If this warning appears in the log, consider increasing the expire date of the claim.";
 
     @Inject
 	private AuthenticationService authenticationService;
@@ -62,13 +68,18 @@ public class ExportResource {
     	try {
 			Claims<Export> claims = this.authenticationService.isExportAuthorization(authorization);
 			
-    		Export export = this.exportService.get(UUID.fromString(claims.sub));
-    		          		
-			Instant fifteenMinutesFromNow = Instant.now().plus(Duration.ofMinutes(15));
-			
-			Signed<URI> manifest = this.authenticationService.manifest(export, fifteenMinutesFromNow);
+			if(claims.hasExpired()) {
+				LOGGER.warn(String.format(string, ChronoUnit.MINUTES.between(claims.exp, Instant.now()), claims.exp));				
+				return Response.status(Status.UNAUTHORIZED).entity("expired").type(MediaType.TEXT_PLAIN_TYPE).build();
+			}
 
-			return Response.seeOther(manifest.value()).build();
+			Export export = this.exportService.get(UUID.fromString(claims.sub));
+    		export.setAccessedAt(Instant.now());
+
+			Instant fiveMinutesFromNow = Instant.now().plus(Duration.ofMinutes(5));			
+			Signed<URI> manifest = this.authenticationService.manifest(export, fiveMinutesFromNow);
+			    		          		
+			return Response.ok(this.exportService.manifest(export, manifest)).build();
     	}
     	catch (ExportGoneException e) {
 			LOGGER.debug(e.getMessage());			    		

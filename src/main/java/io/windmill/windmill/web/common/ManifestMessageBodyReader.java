@@ -26,9 +26,9 @@ import io.windmill.windmill.common.Manifest;
 
 @Provider
 @Consumes(MediaType.MULTIPART_FORM_DATA)
-public class ManifestProvider implements MessageBodyReader<Manifest> {
+public class ManifestMessageBodyReader implements MessageBodyReader<Manifest> {
 
-	public static final Logger LOGGER = Logger.getLogger(ManifestProvider.class);
+	public static final Logger LOGGER = Logger.getLogger(ManifestMessageBodyReader.class);
 	
 	@Context
 	protected Providers workers;

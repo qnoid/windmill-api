@@ -13,8 +13,6 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.plist.XMLPropertyListConfiguration;
 
-import io.windmill.windmill.services.MustacheWriter;
-
 public class Manifest {
 
 	public static Manifest manifest(InputStream in) throws IOException, ConfigurationException {
@@ -62,6 +60,10 @@ public class Manifest {
 		this.version = version;
 		this.title = title;
 	}
+	
+	public ByteArrayOutputStream getBuffer() {
+		return buffer;
+	}
 
 	public String getBundle() {
 		return this.bundle;
@@ -73,18 +75,5 @@ public class Manifest {
 
 	public String getTitle() {
 		return this.title;
-	}
-
-	public ByteArrayOutputStream plistWithURLString(String urlString) throws IllegalArgumentException {
-		
-		try {
-			InputStream is = new ByteArrayInputStream(this.buffer.toByteArray());
-			InputStreamReader reader = new InputStreamReader(is, Charset.forName("UTF-8"));
-			MustacheWriter mustacheWriter = new MustacheWriter();
-			
-			return mustacheWriter.urlString(reader, urlString);
-		} catch (IOException e) {
-			throw new RuntimeException(e.getCause());
-		}
-	}
+	}	
 }

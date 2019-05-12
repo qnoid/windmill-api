@@ -2,8 +2,12 @@ package io.windmill.windmill.services;
 
 import static io.windmill.windmill.persistence.QueryConfiguration.identitifier;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,6 +19,9 @@ import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.configuration2.ex.ConfigurationException;
+
+import io.windmill.windmill.common.Manifest;
 import io.windmill.windmill.persistence.Export;
 import io.windmill.windmill.persistence.Metadata;
 import io.windmill.windmill.persistence.QueryConfiguration;
@@ -23,12 +30,14 @@ import io.windmill.windmill.persistence.sns.Endpoint;
 import io.windmill.windmill.services.Notification.Messages;
 import io.windmill.windmill.services.common.ContentType;
 import io.windmill.windmill.services.exceptions.ExportGoneException;
+import io.windmill.windmill.services.exceptions.ExportServiceException;
 import io.windmill.windmill.services.exceptions.StorageServiceException;
 import io.windmill.windmill.web.common.ApplicationProperties;
 import io.windmill.windmill.web.common.Build;
 import io.windmill.windmill.web.common.Commit;
 import io.windmill.windmill.web.common.Deployment;
 import io.windmill.windmill.web.common.DistributionSummary;
+import io.windmill.windmill.web.security.Signed;
 
 @ApplicationScoped
 public class ExportService {
@@ -129,5 +138,25 @@ public class ExportService {
 		this.entityManager.persist(export);
 		
 		return export;
+	}
+
+	public Manifest manifest(Export export, Signed<URI> uri) {
+
+		try {
+			Manifest manifest = this.storageService.get(uri);
+		
+			Instant fiveMinutesFromNow = Instant.now().plus(Duration.ofMinutes(5));		
+			Signed<URI> url = this.authenticationService.export(export, fiveMinutesFromNow);
+
+			HashMap<String, Object> substitutions = new HashMap<>(); 
+			substitutions.put("URL", url.value().toString());
+			
+			ByteArrayOutputStream byteArrayOutputStream = 
+					new MustacheWriter().substitute(manifest.getBuffer(), substitutions);
+
+			return Manifest.manifest(byteArrayOutputStream);
+		} catch (ConfigurationException | IOException e) {
+			throw new ExportServiceException(e.getMessage(), e);
+		}
 	}
 }

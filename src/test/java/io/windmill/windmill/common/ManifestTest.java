@@ -7,11 +7,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.junit.Test;
 
+import io.windmill.windmill.services.MustacheWriter;
 import junit.framework.Assert;
 
 public class ManifestTest {
@@ -46,7 +49,10 @@ public class ManifestTest {
 		InputStream in = this.getClass().getResourceAsStream("/sample.plist");
 		Manifest manifest = Manifest.manifest(in);
 
-		ByteArrayOutputStream outputStream = manifest.plistWithURLString("https://ota.windmill.io/foo.ipa");
+		Map<String, Object> substitutions = new HashMap<>();
+		substitutions.put("URL", "https://server.windmill.io/foo.ipa");
+		
+		ByteArrayOutputStream outputStream = new MustacheWriter().substitute(manifest.getBuffer(), substitutions);
 		
 		String actual = new String(outputStream.toByteArray(), Charset.forName("UTF-8"));
 		Assert.assertEquals(expected, actual);

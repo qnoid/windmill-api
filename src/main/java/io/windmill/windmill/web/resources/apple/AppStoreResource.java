@@ -31,7 +31,7 @@ public class AppStoreResource {
 	 * 
 	 * @param notification
 	 * @return
-	 * @see StatusUpdateNotificationProvider
+	 * @see StatusUpdateNotificationMessageBodyReader
 	 */
     @POST
     @Path("/subscription/status")

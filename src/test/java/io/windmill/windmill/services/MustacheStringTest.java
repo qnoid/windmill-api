@@ -3,6 +3,8 @@ package io.windmill.windmill.services;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
@@ -19,7 +21,10 @@ public class MustacheStringTest {
 		
 		String plist = IOUtils.toString(plistStream, "UTF-8");
 		
-		ByteArrayOutputStream actual = new MustacheWriter().urlString(plist, String.format("https://%s/%s.ipa", "ota.windmill.io", "foo"));
+		Map<String, Object> substitutions = new HashMap<>();
+		substitutions.put("URL", String.format("https://%s/%s.ipa", "server.windmill.io", "foo"));
+
+		ByteArrayOutputStream actual = new MustacheWriter().substitute(plist, substitutions);
 		
 		Assert.assertEquals(expected, new String( actual.toByteArray(), "UTF-8"));
 	}

@@ -1,12 +1,15 @@
 package io.windmill.windmill.services;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
-import java.util.HashMap;
+import java.nio.charset.Charset;
 import java.util.Map;
 
 import com.github.mustachejava.DefaultMustacheFactory;
@@ -17,10 +20,6 @@ public final class MustacheWriter {
 	
     private final MustacheFactory mf = new DefaultMustacheFactory();
 
-	private ByteArrayOutputStream parse(String value, Map<String, Object> scopes) throws IOException {		
-	    return parse(new StringReader(value), scopes);
-	}
-	
 	private ByteArrayOutputStream parse(Reader reader, Map<String, Object> scopes) throws IOException {		
 	    final ByteArrayOutputStream out = new ByteArrayOutputStream();
 	    final Writer writer = new OutputStreamWriter(out);
@@ -31,17 +30,19 @@ public final class MustacheWriter {
 	    return out;
 	}
 	
-	public ByteArrayOutputStream urlString(Reader reader, String urlString) throws IOException {
-		final HashMap<String, Object> substitutions = new HashMap<>();
-		substitutions.put("URL", urlString);
-	
-		return parse(reader, substitutions);
+	public ByteArrayOutputStream substitute(ByteArrayOutputStream buffer, Map<String, Object> substitutions) throws IOException {
+		
+		try {
+			InputStream is = new ByteArrayInputStream(buffer.toByteArray());
+			InputStreamReader reader = new InputStreamReader(is, Charset.forName("UTF-8"));
+
+			return parse(reader, substitutions);		
+		} catch (IOException e) {
+			throw new RuntimeException(e.getCause());
+		}
 	}
 
-	public ByteArrayOutputStream urlString(String value, String urlString) throws IOException {
-		final HashMap<String, Object> substitutions = new HashMap<>();
-		substitutions.put("URL", urlString);
-	
-		return parse(value, substitutions);
+	public ByteArrayOutputStream substitute(String value, Map<String, Object> substitutions) throws IOException {
+		return parse(new StringReader(value), substitutions);
 	}
 }

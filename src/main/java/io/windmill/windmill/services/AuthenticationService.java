@@ -6,6 +6,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.security.InvalidKeyException;
 import java.security.spec.InvalidKeySpecException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
@@ -160,7 +161,7 @@ public class AuthenticationService {
 		try {
 			return URI.create(CloudFrontUrlSigner.getSignedURLWithCannedPolicy(
 					Protocol.https, 
-					Host.OTA_DOMAIN.toString(), 
+					Host.SERVER_DOMAIN.toString(), 
 					privateKeyFile, 
 					path.toString(), 
 					CLOUDFRONT_PUBLIC_KEY_PAIR_ID, 
@@ -238,10 +239,11 @@ public class AuthenticationService {
 		return claim.jws(claims).get();
 	}
 
-	JWT<JWS> jwt(Claim claim, Export export) throws UnsupportedEncodingException {		
+	JWT<JWS> jwt(Claim claim, Export export, Instant exp) throws UnsupportedEncodingException {		
 		Claims<JWS> claims = new Claims<JWS>()
 				.jti(Secret.create(15).base64())
 				.sub(export.getIdentifier().toString())
+				.exp(exp)
 				.typ(Claims.Type.EXPORT);
 		
 		return claim.jws(claims).get();
@@ -271,13 +273,13 @@ public class AuthenticationService {
 		}
 	}
 
-	public JWT<JWS> jwt(Export export) throws MissingKeyException, AuthenticationServiceException {
+	public JWT<JWS> jwt(Export export, Instant exp) throws MissingKeyException, AuthenticationServiceException {
 		if (AUTHENTICATION_SERVICE_KEY == null) {
 			throw new MissingKeyException(MissingKeyException.WINDMILL_AUTHENTICATION_SERVICE_KEY_NOT_FOUND);
 		}
 		
 		try {
-			return jwt(Claim.create(AUTHENTICATION_SERVICE_KEY.getBytes("UTF-8"), MAC_ALGORITHM).get(), export);
+			return jwt(Claim.create(AUTHENTICATION_SERVICE_KEY.getBytes("UTF-8"), MAC_ALGORITHM).get(), export, exp);
 		} catch (UnsupportedEncodingException | InvalidKeyException e) {
 			throw new AuthenticationServiceException(e.getMessage(), e);
 		}

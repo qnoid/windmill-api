@@ -1,5 +1,8 @@
 package io.windmill.windmill.web;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import javax.inject.Inject;
 import javax.json.bind.serializer.JsonbSerializer;
 import javax.json.bind.serializer.SerializationContext;
@@ -32,9 +35,15 @@ public class ManifestJsonbSerializer implements JsonbSerializer<Export.Manifest>
 		
 		try {
 			Export export = manifest.getExport();
-			JWT<JWS> jwt = this.authenticationService.jwt(export);			
+			Instant exp = Instant.now().plus(Duration.ofDays(7));
+			JWT<JWS> jwt = this.authenticationService.jwt(export, exp);			
 			
-			generator.write(ItmsServices.DOWNLOAD_MANIFEST.build(builder -> builder.path("export").path("manifest").path(jwt.toString())));
+			generator.writeStartObject();
+			
+			generator.write("itms", ItmsServices.DOWNLOAD_MANIFEST.build(builder -> builder.path("export").path("manifest").path(jwt.toString())));
+			generator.write("elapsesAt", exp.getEpochSecond());
+			
+			generator.writeEnd();
 		} catch (IllegalArgumentException | UriBuilderException e) {
 			LOGGER.debug(e.getMessage(), e);			
 		}

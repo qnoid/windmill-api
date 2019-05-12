@@ -242,7 +242,7 @@ public class Export {
 	 * 
 	 * No headers or query parameters should be required to install the Export using this URL. Neither is supported by iOS in its handling of `itms-services` links. 
 	 */
-	@JsonbProperty("url")
+	@JsonbProperty("manifest")
 	@JsonbTypeSerializer(ManifestJsonbSerializer.class)
 	public Manifest getManifest() {
 		return new Manifest(this);

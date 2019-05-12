@@ -21,9 +21,9 @@ import org.jboss.logging.Logger;
 
 @Provider
 @Consumes(MediaType.APPLICATION_JSON)
-public class StatusUpdateNotificationProvider implements MessageBodyReader<StatusUpdateNotification> {
+public class StatusUpdateNotificationMessageBodyReader implements MessageBodyReader<StatusUpdateNotification> {
 
-	public static final Logger LOGGER = Logger.getLogger(StatusUpdateNotificationProvider.class);
+	public static final Logger LOGGER = Logger.getLogger(StatusUpdateNotificationMessageBodyReader.class);
 	
 	@Context
 	protected Providers workers;

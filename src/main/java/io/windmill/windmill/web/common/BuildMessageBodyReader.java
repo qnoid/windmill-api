@@ -23,9 +23,9 @@ import org.jboss.logging.Logger;
 
 @Provider
 @Consumes(MediaType.APPLICATION_JSON)
-public class BuildProvider implements MessageBodyReader<Build> {
+public class BuildMessageBodyReader implements MessageBodyReader<Build> {
 
-	public static final Logger LOGGER = Logger.getLogger(BuildProvider.class);
+	public static final Logger LOGGER = Logger.getLogger(BuildMessageBodyReader.class);
 	
 	@Context
 	protected Providers workers;

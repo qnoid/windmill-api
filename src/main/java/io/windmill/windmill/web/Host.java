@@ -14,14 +14,14 @@ public enum Host {
 	API_PRODUCTION("api.windmill.io"),
 	API_DEVELOPMENT("192.168.1.2"),
 	
-	OTA_PRODUCTION("ota.windmill.io");
+	SERVER_PRODUCTION("server.windmill.io");
 			
 	@FunctionalInterface
 	public static interface URITemplate {
 		public UriBuilder apply(UriBuilder builder);
 	}
 
-	public static final Host OTA_DOMAIN = OTA_PRODUCTION;
+	public static final Host SERVER_DOMAIN = SERVER_PRODUCTION;
 	public static final Host API_DOMAIN = API_PRODUCTION;
 
 	private String domain;

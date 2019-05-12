@@ -10,6 +10,7 @@ package io.windmill.windmill.services;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URI;
 
 import javax.annotation.PreDestroy;
@@ -23,10 +24,12 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.Response.Status.Family;
 
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.util.Hex;
 
 import io.windmill.windmill.common.Condition;
+import io.windmill.windmill.common.Manifest;
 import io.windmill.windmill.services.exceptions.StorageServiceException;
 import io.windmill.windmill.web.security.CryptographicHashFunction;
 import io.windmill.windmill.web.security.SHA256;
@@ -50,7 +53,7 @@ public class StorageService {
     
     /**
      */
-	Status upload(ByteArrayOutputStream outputStream, Signed<URI> signed) throws StorageServiceException {
+	public Status upload(ByteArrayOutputStream outputStream, Signed<URI> signed) throws StorageServiceException {
 
 		byte[] bytes = outputStream.toByteArray();
 				
@@ -66,6 +69,27 @@ public class StorageService {
         Condition.guard(Family.SUCCESSFUL == status.getFamily(), () -> new StorageServiceException(status.getReasonPhrase()));
         
 		return status;
+    }
+	
+    /**
+     */
+	public Manifest get(Signed<URI> signed) throws StorageServiceException {
+				
+		Builder request = this.client.target(signed.value()).request()
+					.header("content-type", "text/xml plist");
+
+		Response response = request.get();
+		Status status = Status.fromStatusCode(response.getStatus());
+	
+        LOGGER.debug(String.format("Get at '%s' %s.", signed.value(), status));
+
+        Condition.guard(Family.SUCCESSFUL == status.getFamily(), () -> new StorageServiceException(status.getReasonPhrase()));
+        
+        try (ByteArrayOutputStream entity = response.readEntity(ByteArrayOutputStream.class)) {    	
+    		return Manifest.manifest(entity);        	
+        } catch (IOException | ConfigurationException e) {
+			throw new StorageServiceException(e.getMessage(), e);
+		}
     }
 
 	public Status delete(Signed<URI> signed) throws StorageServiceException {

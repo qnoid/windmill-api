@@ -1,6 +1,5 @@
 package io.windmill.windmill.services;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,9 +20,6 @@ import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.services.exceptions.AccountServiceException;
 import io.windmill.windmill.services.exceptions.NoAccountException;
 import io.windmill.windmill.services.exceptions.StorageServiceException;
-import io.windmill.windmill.web.Host;
-import io.windmill.windmill.web.security.JWT;
-import io.windmill.windmill.web.security.JWT.JWS;
 import io.windmill.windmill.web.security.Signed;
 
 @ApplicationScoped
@@ -65,16 +61,11 @@ public class WindmillService {
 		Export export = this.accountService.updateOrCreate(account, manifest.getBundle(), manifest.getTitle(), manifest.getVersion());
 	
 	    LOGGER.debug(String.format("Created or updated export for account '%s' with metadata.bundle-identifier '%s', metadata.bundle-version '%s', metadata.title '%s'", account, export.getIdentifier(), export.getVersion(), export.getTitle()));
-
-		JWT<JWS> jwt = this.authenticationService.jwt(export);		    
-		URI url = Host.API_DOMAIN.account(account).path("export").path(jwt.toString()).build();
 		
-		ByteArrayOutputStream byteArrayOutputStream = manifest.plistWithURLString(url.toString());
+		Instant fiveMinutesFromNow = Instant.now().plus(Duration.ofMinutes(5));
 		
-		Instant fifteenMinutesFromNow = Instant.now().plus(Duration.ofMinutes(15));
-		
-		Signed<URI> uri = this.authenticationService.manifest(account, export, fifteenMinutesFromNow);
-		storageService.upload(byteArrayOutputStream, uri);
+		Signed<URI> uri = this.authenticationService.manifest(account, export, fiveMinutesFromNow);
+		storageService.upload(manifest.getBuffer(), uri);
 
 		return export; 
 	}

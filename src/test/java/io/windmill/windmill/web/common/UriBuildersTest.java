@@ -12,9 +12,9 @@ public class UriBuildersTest {
 
 	@Test
 	public void testGivenPathAssertURLString() throws URISyntaxException {
-		URI uri = Host.OTA_DOMAIN.builder().path("/foo").build();
+		URI uri = Host.SERVER_DOMAIN.builder().path("/foo").build();
 		
-		Assert.assertEquals("https://ota.windmill.io/foo", uri.toString());
+		Assert.assertEquals("https://server.windmill.io/foo", uri.toString());
 	}
 
 }
