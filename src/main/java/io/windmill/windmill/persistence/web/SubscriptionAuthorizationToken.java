@@ -10,8 +10,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
@@ -21,9 +19,6 @@ import io.windmill.windmill.web.JsonbAdapterInstantToEpochSecond;
 
 @Entity
 @Table(name="subscription_authorization_token")
-@NamedQueries(
-    @NamedQuery(name = "subscription_authorization_token.belongs_to_subscription_identifier", query = "SELECT sat FROM SubscriptionAuthorizationToken sat WHERE sat.subscription.identifier = :subscription_identifier AND sat.authorizationToken.value = :authorization_token")
-    )
 public class SubscriptionAuthorizationToken {
 
     @Id
@@ -45,7 +40,7 @@ public class SubscriptionAuthorizationToken {
     @JoinColumn(name="subscription_id")
     @NotNull
     Subscription subscription;
-
+    
 	public SubscriptionAuthorizationToken() {
 		this.authorizationToken = AuthorizationToken.create();
         this.createdAt = Instant.now();

@@ -92,7 +92,7 @@ public class SubscriptionResource {
 			
 			this.subscriptionService.latest(subscription);
 			
-	    	SubscriptionAuthorizationToken subscriptionAuthorizationToken = this.authenticationService.issueAuthorizationToken(subscription);
+	    	SubscriptionAuthorizationToken subscriptionAuthorizationToken = new SubscriptionAuthorizationToken(subscription);
 	    	
 			JWT<JWS> accessToken = this.authenticationService.jwt(subscriptionAuthorizationToken);
 
@@ -169,7 +169,7 @@ public class SubscriptionResource {
 				return Response.status(Status.UNAUTHORIZED).entity("expired").build();
 			}
 
-	    	SubscriptionAuthorizationToken subscriptionAuthorizationToken = this.authenticationService.issueAuthorizationToken(subscription);
+	    	SubscriptionAuthorizationToken subscriptionAuthorizationToken = new SubscriptionAuthorizationToken(subscription);
 	    		    	
 			JWT<JWS> accessToken = this.authenticationService.jwt(subscriptionAuthorizationToken);
 

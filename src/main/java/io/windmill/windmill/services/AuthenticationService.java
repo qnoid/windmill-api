@@ -6,21 +6,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.security.InvalidKeyException;
 import java.security.spec.InvalidKeySpecException;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.Date;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.persistence.NoResultException;
-import javax.persistence.Query;
-import javax.transaction.Transactional;
-import javax.validation.constraints.NotNull;
 
 import com.amazonaws.services.cloudfront.CloudFrontUrlSigner;
 import com.amazonaws.services.cloudfront.util.SignerUtils.Protocol;
@@ -29,7 +22,6 @@ import io.windmill.windmill.common.Condition;
 import io.windmill.windmill.common.Secret;
 import io.windmill.windmill.persistence.Account;
 import io.windmill.windmill.persistence.Export;
-import io.windmill.windmill.persistence.QueryConfiguration;
 import io.windmill.windmill.persistence.Subscription;
 import io.windmill.windmill.persistence.WindmillEntityManager;
 import io.windmill.windmill.persistence.web.SubscriptionAuthorizationToken;
@@ -38,7 +30,6 @@ import io.windmill.windmill.services.exceptions.InvalidClaimException;
 import io.windmill.windmill.services.exceptions.InvalidSignatureException;
 import io.windmill.windmill.services.exceptions.MissingKeyException;
 import io.windmill.windmill.web.Host;
-import io.windmill.windmill.web.SubscriptionAuthorizationTokenException;
 import io.windmill.windmill.web.security.Claim;
 import io.windmill.windmill.web.security.Claims;
 import io.windmill.windmill.web.security.Claims.Type;
@@ -75,6 +66,7 @@ public class AuthenticationService {
 	}
 
 	public Claims<Subscription> isSubscriptionClaim(String bearer) {
+		
 		JWT<JWS> jwt = this.bearer(bearer);                    
 
 		this.validate(jwt);
@@ -94,28 +86,13 @@ public class AuthenticationService {
 		
 		this.validate(jwt);
 
-		try {
-		
-			Claims<SubscriptionAuthorizationToken> claims = Claims.accessToken(jwt);
-		
-			UUID subscription_identifier = Optional.ofNullable(claims.sub).map(UUID::fromString).get();
-			
-			Secret<SubscriptionAuthorizationToken> secret = 
-					Optional.ofNullable(claims.jti)
-						.map(Base64.getUrlDecoder()::decode)
-						.map( base64Decoded -> { Secret<SubscriptionAuthorizationToken> token = Secret.of(base64Decoded); return token; } )
-						.get();
+		Claims<SubscriptionAuthorizationToken> claims = Claims.accessToken(jwt);
 	
-			this.exists(secret, subscription_identifier);
-			
-			if(Condition.doesnot(claims.isTyp(Type.ACCESS_TOKEN))) {
-				throw new InvalidClaimException(String.format("Claim not an access token. Instead got: %s", claims.typ));
-			}
-	
-			return claims;
-		} catch (IllegalArgumentException e) {
-			throw new InvalidClaimException(e.getMessage(), e);
+		if(Condition.doesnot(claims.isTyp(Type.ACCESS_TOKEN))) {
+			throw new InvalidClaimException(String.format("Claim not an access token. Instead got: %s", claims.typ));
 		}
+
+		return claims;
 	}
 	
 	private JWT<JWS> jws(final String value) {
@@ -138,14 +115,6 @@ public class AuthenticationService {
 		}
 	
 		return claims;
-	}
-	
-	public SubscriptionAuthorizationToken issueAuthorizationToken(Subscription subscription) {
-
-		SubscriptionAuthorizationToken token = new SubscriptionAuthorizationToken(subscription);								
-		entityManager.persist(token);
-	
-		return token;
 	}
 	
 	private URI sign(URI path, Instant dateLessThan) {
@@ -185,35 +154,6 @@ public class AuthenticationService {
 
 	public Signed<URI> manifest(Export export, Instant fifteenMinutesFromNow) {
 		return () -> sign(export.getManifest().path(), fifteenMinutesFromNow);			
-	}
-
-	/**
-	 * @param secret a token as represented by a SubscriptionAuthorizationToken as returned by {@link #issueAuthorizationToken(Subscription)} 
-	 * @param subscription_identifier the subscription the SubscriptionAuthorizationToken must belong to.
-	 * @throws SubscriptionAuthorizationTokenException if the given token was not found
-	 */
-	@Transactional
-	public void exists(Secret<SubscriptionAuthorizationToken> secret, UUID subscription_identifier) throws NoSuchElementException, SubscriptionAuthorizationTokenException {
-		
-		String token = secret.encoded().orElseThrow(() -> new NoSuchElementException() );
-		
-		try {			
-			SubscriptionAuthorizationToken subscriptionAuthorizationToken = 
-					this.entityManager.getSingleResult("subscription_authorization_token.belongs_to_subscription_identifier", 
-							new QueryConfiguration<SubscriptionAuthorizationToken>() {
-
-								@Override
-								public @NotNull Query apply(Query query) {
-									query.setParameter("subscription_identifier", subscription_identifier);
-									query.setParameter("authorization_token", token);				
-									return query;
-								}
-							});
-						
-			subscriptionAuthorizationToken.setAccessedAt(Instant.now());
-		} catch(NoResultException e) {
-			throw new SubscriptionAuthorizationTokenException(SubscriptionAuthorizationTokenException.SUBSCRIPTION_AUTHORIZATION_TOKEN_NOT_FOUND, e);
-    	}		
 	}
 
 	JWT<JWS> jwt(Claim claim, Subscription subscription) throws UnsupportedEncodingException {
