@@ -10,7 +10,6 @@ package io.windmill.windmill.services;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.net.URI;
 
 import javax.annotation.PreDestroy;
@@ -24,13 +23,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.Response.Status.Family;
 
-import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.util.Hex;
 
 import io.windmill.windmill.common.Condition;
 import io.windmill.windmill.common.Manifest;
 import io.windmill.windmill.services.exceptions.StorageServiceException;
+import io.windmill.windmill.web.common.ManifestBodyReader;
 import io.windmill.windmill.web.security.CryptographicHashFunction;
 import io.windmill.windmill.web.security.SHA256;
 import io.windmill.windmill.web.security.Signed;
@@ -44,7 +43,7 @@ public class StorageService {
     private static final Logger LOGGER = Logger.getLogger(StorageService.class);
     
     private final CryptographicHashFunction hash = SHA256.create();
-    private final Client client = ClientBuilder.newClient();
+    private final Client client = ClientBuilder.newClient().register(ManifestBodyReader.class);
     
     @PreDestroy
     void destroy() {
@@ -85,11 +84,7 @@ public class StorageService {
 
         Condition.guard(Family.SUCCESSFUL == status.getFamily(), () -> new StorageServiceException(status.getReasonPhrase()));
         
-        try (ByteArrayOutputStream entity = response.readEntity(ByteArrayOutputStream.class)) {    	
-    		return Manifest.manifest(entity);        	
-        } catch (IOException | ConfigurationException e) {
-			throw new StorageServiceException(e.getMessage(), e);
-		}
+		return response.readEntity(Manifest.class);        
     }
 
 	public Status delete(Signed<URI> signed) throws StorageServiceException {

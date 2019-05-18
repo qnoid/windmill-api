@@ -148,12 +148,12 @@ public class AuthenticationService {
 		return () -> sign(export.path(), dateLessThan);	
 	}
 	
-	public Signed<URI> manifest(Account account, Export export, Instant fifteenMinutesFromNow) {
-		return () -> sign(export.getManifest().path(account), fifteenMinutesFromNow);			
+	public Signed<URI> manifest(Account account, Export export, Instant dateLessThan) {
+		return () -> sign(export.getManifest().path(account), dateLessThan);			
 	}
 
-	public Signed<URI> manifest(Export export, Instant fifteenMinutesFromNow) {
-		return () -> sign(export.getManifest().path(), fifteenMinutesFromNow);			
+	public Signed<URI> manifest(Export export, Instant dateLessThan) {
+		return () -> sign(export.getManifest().path(), dateLessThan);			
 	}
 
 	JWT<JWS> jwt(Claim claim, Subscription subscription) throws UnsupportedEncodingException {
