@@ -109,6 +109,15 @@ public class AppStoreService {
 		
 		return receipt.process(latest_receipt_info);
 	}
+	
+	public AppStoreTransaction update(String receiptData, StatusUpdateReceipt receipt) throws ReceiptVerificationException, NoSubscriptionException 
+	{
+		JsonObject json = this.verify(receiptData);
+
+		JsonObject latest_receipt_info = json.getJsonObject("latest_receipt_info");
+		
+		return receipt.process(latest_receipt_info);
+	}
 
 	private JsonObject verify(String receiptData) throws ReceiptVerificationException {
 		LOGGER.debug(receiptData);

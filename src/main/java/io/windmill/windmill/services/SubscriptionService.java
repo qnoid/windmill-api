@@ -4,9 +4,13 @@ import static io.windmill.windmill.common.Condition.guard;
 import static io.windmill.windmill.persistence.QueryConfiguration.identitifier;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAccessor;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.annotation.PostConstruct;
@@ -34,6 +38,7 @@ import io.windmill.windmill.persistence.apple.User;
 import io.windmill.windmill.services.apple.AppStoreService;
 import io.windmill.windmill.services.apple.InAppPurchaseReceipt;
 import io.windmill.windmill.services.apple.LatestReceipt;
+import io.windmill.windmill.services.apple.StatusUpdateReceipt;
 import io.windmill.windmill.services.exceptions.NoRecoredTransactionsException;
 import io.windmill.windmill.services.exceptions.NoSubscriptionException;
 import io.windmill.windmill.services.exceptions.ReceiptVerificationException;
@@ -148,6 +153,39 @@ public class SubscriptionService {
 		return updateSubscription(transaction_identifier, receipt, Instant.from(AppStoreService.DATE_FORMATER.parse(expiresAt)), metadata);
 	}
 	
+	Subscription updateSubscription(JsonObject transaction, String receipt, Map<Metadata, Boolean> metadata) throws ReceiptVerificationException, NoSubscriptionException {
+
+		String product_id = transaction.getString("product_id");
+		
+		Product.of(product_id).orElseThrow(new Supplier<ReceiptVerificationException>() {
+			@Override
+			public ReceiptVerificationException get() {
+				return new ReceiptVerificationException(String.format("Receipt was valid but the transaction found is not of a known product id."));
+			}
+		});
+
+		
+		String transaction_identifier = transaction.getString("original_transaction_id");
+		String expires_date = transaction.getString("expires_date");
+
+		TemporalAccessor expiresAt = Optional.of(expires_date).map(new Function<String, TemporalAccessor>() {
+
+			@Override
+			public TemporalAccessor apply(String expires_date) {
+				
+				try {
+					return AppStoreService.DATE_FORMATER.parse(expires_date);
+				}
+				catch (DateTimeParseException e) {
+					return Instant.ofEpochMilli(Long.valueOf(expires_date));
+				}
+			}
+		}).get();
+			
+		
+		return updateSubscription(transaction_identifier, receipt, Instant.from(expiresAt), metadata);
+	}
+	
 	public Subscription subscription(Receipt receipt)  throws ReceiptVerificationException, NoRecoredTransactionsException {
 		return this.subscription(receipt, new Hashtable<>());
 	}
@@ -210,6 +248,30 @@ public class SubscriptionService {
 		guard(subscription.isActive(), () -> new SubscriptionExpiredException());
 	}
 
+	/**
+	 * 
+	 * @param receipt
+	 * @param metadata
+	 * @return 
+	 * @throws ReceiptVerificationException if the verification of the receipt fails; shouldn't happen for a legitimate receipt.
+	 * @throws NoSubscriptionException if a subscription associated with the {@link AppStoreTransaction} for the given receipt does not exist
+	 */
+	public Subscription update(Receipt receipt, Map<Metadata, Boolean> metadata) throws ReceiptVerificationException, NoSubscriptionException {
+		
+		String receiptData = receipt.getData();		
+		
+		Subscription subscription = this.appStoreService.update(receiptData, new StatusUpdateReceipt() {
+			
+			@Override
+			public AppStoreTransaction process(JsonObject transaction)
+					throws ReceiptVerificationException, NoSubscriptionException {
+				return updateSubscription(transaction, receiptData, metadata).getTransaction();
+			}
+		}).getSubscription();
+		
+		return subscription;
+	}
+	
 	public Subscription belongs(UUID account_identifier, UUID subscription_identifier) throws NoSubscriptionException {		
 		return belongs(account_identifier, subscription_identifier, QueryConfiguration.empty());		
 	}

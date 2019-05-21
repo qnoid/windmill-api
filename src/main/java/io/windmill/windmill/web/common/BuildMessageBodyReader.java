@@ -49,7 +49,7 @@ public class BuildMessageBodyReader implements MessageBodyReader<Build> {
 			JsonObject commit = jsonObject.getJsonObject("commit");
 			String branch = commit.getString("branch");
 			String shortSha = commit.getString("shortSha");
-			long date = commit.getJsonNumber("date").longValueExact();;					
+			long date = commit.getJsonNumber("date").longValueExact();				
 			JsonObject applicationProperties = jsonObject.getJsonObject("applicationProperties");
 			String bundleDisplayName = applicationProperties.getString("bundleDisplayName");
 			String bundleVersion = applicationProperties.getString("bundleVersion");					

@@ -13,13 +13,17 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.jboss.logging.Logger;
+
 import io.windmill.windmill.services.SubscriptionService;
-import io.windmill.windmill.services.exceptions.NoRecoredTransactionsException;
+import io.windmill.windmill.services.exceptions.NoSubscriptionException;
 import io.windmill.windmill.services.exceptions.ReceiptVerificationException;
 
 @Path("/appstoreconnect")
 @ApplicationScoped
 public class AppStoreResource {
+
+	public static final Logger LOGGER = Logger.getLogger(AppStoreResource.class);
 
 	@Inject
 	private SubscriptionService subscriptionService;
@@ -42,7 +46,7 @@ public class AppStoreResource {
 
 		try {
 			if (notification.isRenewal()) {
-				this.subscriptionService.subscription(notification.getReceipt(), new Hashtable<>());
+				this.subscriptionService.update(notification.getReceipt(), new Hashtable<>());
 			}
 			/*
 			 * It is recommended that you test statusUpdateNotifications for transactions in
@@ -56,8 +60,10 @@ public class AppStoreResource {
 	    	
 		} catch (ReceiptVerificationException e) {
 			return Response.status(Status.FORBIDDEN).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
-		} catch (NoRecoredTransactionsException e) {
-			return Response.status(Status.ACCEPTED).build();
+		} catch (NoSubscriptionException e) {
+			LOGGER.warn("Seemingly, App Store Connect has send a status update notification for a subscription that does not exist. "
+					+ "This shouldn't happen unless the the request didn't originate from App Store Connect.", e);
+	    	return Response.ok().build();
 		}
     }
 }
