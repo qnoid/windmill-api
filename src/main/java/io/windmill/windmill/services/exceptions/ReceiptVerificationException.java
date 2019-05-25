@@ -14,7 +14,6 @@ public class ReceiptVerificationException extends Exception {
 	
 	public ReceiptVerificationException(String message) {
 		super(message);
-		this.status = AppStoreService.Status.RECEIPT_VALID;
 	}
 
 	public ReceiptVerificationException(AppStoreService.Status status) {

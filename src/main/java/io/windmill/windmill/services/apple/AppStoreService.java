@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
+import java.util.Optional;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.json.Json;
@@ -23,11 +24,14 @@ import javax.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
 
+import io.windmill.windmill.apple.AppStoreConnect;
+import io.windmill.windmill.apple.AppStoreConnect.ExpirationIntent;
 import io.windmill.windmill.persistence.apple.AppStoreTransaction;
 import io.windmill.windmill.services.exceptions.AppStoreServiceException;
 import io.windmill.windmill.services.exceptions.NoRecoredTransactionsException;
 import io.windmill.windmill.services.exceptions.NoSubscriptionException;
 import io.windmill.windmill.services.exceptions.ReceiptVerificationException;
+import io.windmill.windmill.services.exceptions.SubscriptionExpiredException;
 
 @ApplicationScoped
 public class AppStoreService {
@@ -45,6 +49,7 @@ public class AppStoreService {
 		UNAUTHENTICATED_RECEIPT(21003, "The receipt could not be authenticated."),
 		UNAUTHENTICATED_REQUEST(21004, "The shared secret you provided does not match the shared secret on file for your account."),
 		SERVER_UNAVAILABLE(21005, "The receipt server is not currently available."),
+		SUBSCRIPTION_EXPIRED(21006, "This receipt is valid but the subscription has expired. When this status code is returned to your server, the receipt data is also decoded and returned as part of the response."),
 		INVALID_PRODUCTION_RECEIPT(21007, "This receipt is from the test environment, but it was sent to the production environment for verification. Send it to the test environment instead."),
 		INVALID_TEST_RECEIPT(21008, "This receipt is from the production environment, but it was sent to the test environment for verification. Send it to the production environment instead."),
 		UNAUTHORISED_RECEIPT(21010, "This receipt could not be authorized. Treat this the same as if a purchase was never made.");
@@ -52,13 +57,13 @@ public class AppStoreService {
 	    private final int code;
 	    private final String reason;
 	
-	    public static Status fromStatusCode(final int statusCode) {
+	    public static Optional<Status> of(final int code) {
 	        for (Status s : Status.values()) {
-	            if (s.code == statusCode) {
-	                return s;
+	            if (s.code == code) {
+	                return Optional.of(s);
 	            }
 	        }
-	        return null;
+	        return Optional.empty();
 	    }
 	    
 	    Status(final int statusCode, final String reasonPhrase) {
@@ -105,29 +110,43 @@ public class AppStoreService {
 	{
 		JsonObject json = this.verify(receiptData);
 
-		JsonArray latest_receipt_info = json.getJsonArray("latest_receipt_info");
+		String expiration_intent = json.getString("expiration_intent", "");
 		
-		return receipt.process(latest_receipt_info);
+		Optional<ExpirationIntent> expirationIntent = AppStoreConnect.ExpirationIntent.of(expiration_intent);
+		
+		if (expirationIntent.isPresent()) {
+			throw new SubscriptionExpiredException(expirationIntent.get().toString());
+		}
+		
+		try {
+			JsonArray latest_receipt_info = json.getJsonArray("latest_receipt_info");		
+			return receipt.process(latest_receipt_info);
+		} catch (ClassCastException e) {
+			/*
+			 * For iOS 6 style transaction receipts, this is the JSON representation of the receipt for the most recent renewal. 
+			 * For iOS 7 style app receipts, the value of this key is an array containing all in-app purchase transactions. 
+			 */
+			throw new ReceiptVerificationException("The receipt data stored returned an iOS 6 style transaction receipt. This shouldn't happen in the production App Store AFAICS.");
+		}
 	}
 	
 	public AppStoreTransaction update(String receiptData, StatusUpdateReceipt receipt) throws ReceiptVerificationException, NoSubscriptionException 
 	{
 		JsonObject json = this.verify(receiptData);
 
-		JsonObject latest_receipt_info = json.getJsonObject("latest_receipt_info");
-		
+		JsonObject latest_receipt_info = json.getJsonObject("latest_receipt_info");		
 		return receipt.process(latest_receipt_info);
 	}
 
-	private JsonObject verify(String receiptData) throws ReceiptVerificationException {
+	private JsonObject verify(String receiptData) throws ReceiptVerificationException, SubscriptionExpiredException {
 		LOGGER.debug(receiptData);
 
 		JsonObject json = verifyAppStoreReceipt(receiptData);		
-		Status statusCode = AppStoreService.Status.fromStatusCode(json.getInt("status"));
+		Status statusCode = AppStoreService.Status.of(json.getInt("status")).orElseThrow(() -> new ReceiptVerificationException("Invalid status code present in the receipt"));
 		
 		if (Status.INVALID_PRODUCTION_RECEIPT == statusCode ) {
-			json = verifySandboxReceipt(receiptData);			
-			statusCode = AppStoreService.Status.fromStatusCode(json.getInt("status"));			
+			json = verifySandboxReceipt(receiptData);
+			statusCode = AppStoreService.Status.of(json.getInt("status")).orElseThrow(() -> new ReceiptVerificationException("Invalid status code present in the receipt"));
 		} 
 		
 		LOGGER.debug(json.toString());
@@ -135,6 +154,8 @@ public class AppStoreService {
 		switch (statusCode) {
 		case RECEIPT_VALID:
 			return json;
+		case SUBSCRIPTION_EXPIRED:
+			throw new SubscriptionExpiredException();
 		default:
 			throw new ReceiptVerificationException(statusCode);
 		}
