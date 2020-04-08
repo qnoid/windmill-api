@@ -1,88 +1,110 @@
-Windmill Backend
-===================
+I have made the decision to release the source code of [Windmill](https://qnoid.com/software-engineer/#windmill).
+* [Windmill on the Mac](https://github.com/qnoid/windmill-osx)   
+Windmill on the Mac is a native macOS application written in Swift 5 on Xcode 10 targetting macOS 10.14. The codebase is about 16k LOC.
 
+* [Windmill on the iPhone](https://github.com/qnoid/windmill-ios)   
+Windmill on the iPhone is a native iOS app written in Swift 5 on Xcode 10 targetting iOS 12.2. The codebase is about 5k LOC.
 
-### Pre-Requisites ###
+* [Windmill REST API](https://github.com/qnoid/windmill-api)   
+The Windmill REST API is a Java EE 8 implementation written in Java 8 using JAX-RS. The codebase is about 7.5k LOC.
 
-1. You need Java 1.8
-2. You need Maven 3.3.x 
-3. You need to download and install locally a distribution of Wildfly.10.0.0.Final 
-(download [here](http://wildfly.org/downloads/))
-4. You need to have a postgres DB running locally, with `user:windmill`, `pwd:windmill`, and `db name:windmill` and `schema: public`.
- (download [here](http://www.postgresql.org/download/))
+## History
 
+I started working on Windmill as a side project in 2014. In 2017 I decided to commit full time and in February 2018, Windmill on the Mac 1.0 was released. In July 2019 Apple rejected [Windmill on the iPhone](https://qnoid.com/2019/07/29/Windmill-on-the-iPhone.html#main) and took issue with Windmill in principle. I didn't make any money on Windmill and was not in a position to take it forward given these cirmustances thus formally [ending its development](https://qnoid.com/2020/01/03/Windmill.html) in January 2020.
 
-Specifications 
---------------
-See [here](specification.md)
+## Why make the source code public?
 
+Effectively, by Apple putting Windmill on notice, the only way I can distribute Windmill on the Apple platforms is at the source code level. Even though this does not serve the mission to make continuous delivery accessible, whatever value Windmill brings even as source code, is better than none at all. 
 
-Build & Run 
------------
+The development of Windmill did come to an abrupt end and didn't get a fair chance to become what I had envisioned. It would bring me joy to know that developers will benefit from it by learning something new. It's a way to give back to the community.
 
-### How to Setup the data source at your local application server ###
+Windmill is not some example software after all. It is production grade that spans across the desktop, mobile and the server. The software engineering behind it is still relevant and the technologies used modern.
 
-Assuming that your Wildfly Server is running!
+I was diligent, took great care and put a lot of attention in building succint, performant, reliable, and bug free software across multiple platforms. I believe the source code of Windmill has something to offer whether you are a beginner or a senior in software development in any of the 3 platforms.
 
-Navigate to the root (`/windmill`) of the project and execute.
+## What does making the Windmill source code public mean?
 
-```
-mvn clean package -Psetup-datasource -Dmaven.home=<Path_To_Wildfly>
-```
+As a product, my gut feeling tells me that unless a company with the available resources gets behind it, Windmill will not go far. I am hopeful but don't expect much.
 
-where the `<Path_To_Wildfly>` should the directory where you have the app server e.g `~/dev/wildfly-10.0.0.Final`
+As software, I believe not that much. These are times where running software, on your computer (desktop or mobile), unfettered is near impossible. In order to run Windmill on your Mac and the iPhone you will need an Apple Developer account. Since Windmill is built for developers, chances are you do have one. Still.
 
-### How to build the windmill war for Local deployment / use ###
+Windmill is built to take advantage of and be tightly integrated with the Apple ecosystem. It makes use of Push Notifications, Background Mode, CloudKit and In-App Purchases. You can strip away and refactor some of the code but the point still stands. Distributing, modifying and running software outside walled gardens isn't as straight forward.
 
-Navigate to the root (`/windmill`) of the project and execute the following
+The Windmill REST API is no different. The implementation relies heavily on AWS infrastructure. It will also take some elbow grease to get up and running. 
 
-```
-mvn clean install
-```
+## What not to expect
 
-This will eventually build your war with `local` PostgresDB settings.
+Releasing the source code of Windmill does not make it open-source. I don't plan on contributing any time or energy developing it further. To support it as open-source would demand of me even more resources and attention which I don't have the luxury of.
 
-If you want to create a war that points to an in memory Wildfly H2 DB, then you need to do the following:
+Don't expect any instructions on how to build and run the code.   
+Don't expect the code to be extensively documented.   
+Don't expect me to respond to any issues raised or pull requests made. 
 
-```
-mvn clean install -Ph2
-```
+I don't plan to publish any Windmill architecture diagrams, security considerations or design documents either.
 
-This will package whithin your war, a persistence.xml that will point to an already configured/standard datasource in Wildfly.
+## How to make the best of the source code
+### Study it.
 
-### How to Build for AWS ###
-Navigate to the root (`/windmill`) of the project and execute.
+As a Swift developer, the macOS app<sup id="a1">[1](#f1)</sup> should be the most juicy one for you. 
 
-```
-mvn clean install -Dpostgres.username=[windmill]
-                  -Dpostgres.password=[windmill]
-                  -Dpostgres.url=[jdbc:postgresql://localhost:5432/windmill]
-                  -Dpostgres.schema=[public]                 
-```
+Have a look at the `ProcessManager` type on how to launch a Process, wait and receive data in the background from both standard out and err. The `ProcessManager` also allows you to recover a Process that has exited with an error code. As an example, look at how `ActivityBuild` creates a `RecoverableProcess`.
 
-The above properties, should point to the 'AWS' specific postgres.
+The `Windmill` type makes extensive use of the design pattern as described in [A series of steps](https://qnoid.com/2019/05/07/A-series-of-steps.html#main) post. Take a closer look at the `ActivityBuilder` type to see how Windmill uses it to create the pipeline to a succesful build.
 
-### How to Deploy to AWS ###
+As fas as the iOS app goes, have a look at `PaymentQueue`
+and `SubscriptionManager` on how to process transactions when purchasing a subscription that requires validating a receipt on the server.
 
-Under the `/scripts` folder you will find the following :
+I have already documented how to [replace the rootViewController of the UIWindow](https://qnoid.com/2019/02/15/How_to_replace_the_-rootViewController-_of_the_-UIWindow-_in_iOS.html#main) that Windmill on the iPhone also makes use of.
 
-1. `deploy-aws.sh` :  copies the war to AWS
+As a Java developer, the REST API should prove useful as a reference implementation of the Java EE 8 spec. The most interesting tidbit is likely the use of an `EntityGraph` to retain the lazy associations of an `@Entity` while performing queries that require exclusively independent associations to materialise. In the case of the Windmill REST API, that would be the `AccountResource#list` that materialises a list of `Export` types and the `SubscriptionResource#isSubscriber` that materialises a list of `Transaction` types for a `Subscription`.
 
+### Own the code.
+At the very minimum Windmill on the Mac should serve as a replacement to Jenkins. For any developers that still use Xcode 10 to build and test their app, this is as straightforward as building and signing the app using your Apple account. The iCloud capability can be disabled as it's only relevant when used alongside the iPhone app.
 
-API Endpoints 
--------------
+If you are using Xcode 11, it will take some effort to add support since Apple has changed the result bundle format. At the very least Windmill needs to be updated to support the new format.
 
-### Main API ### 
+If you do put in the time and effort, it should be possible to have Windmill on the Mac, on the iPhone and on the server running which will give you app distribution.
 
-The current setup initializes windmill's RESTFul Api in the following url :
+## What did the future hold for Windmill?
+Windmill was really at its infancy. Allowing developers to distribute their app and have over-the-air installation was the first step in making its development sustainable.
 
-`http://<IP>:8080/`
+I had plans to develop an TV App to act as a dashboard for teams and have company wide notifications.
 
-### Healthcheck ### 
+I wanted to add support for nightlies, the ability to substitute resources during packaging and support conditional compilation to allow for different builds.
 
-Check if everything works. 
-`http://<IP>:8080/healthcheck`
+Finally, I wanted to tackle distributed building, support multiple configurations (e.g. to maintain multiple releases) and integration with 3rd party libraries.
 
-# Database
+Feel free to use these guidelines as a roadmap.
 
-See database.md
+## The licence
+
+>   Created by Markos Charatzas (markos@qnoid.com)   
+>   Copyright © 2014-2020 qnoid.com. All rights reserved.   
+>    
+>   The above copyright notice and this permission notice shall be included in
+>   all copies or substantial portions of the Software.   
+>    
+>   Permission is granted to anyone to use this software for any purpose,
+>   including commercial applications, and to alter it and redistribute it
+>   freely, subject to the following restrictions:   
+>    
+>   This software is provided 'as-is', without any express or implied
+>   warranty.  In no event will the authors be held liable for any damages
+>   arising from the use of this software.   
+>    
+>   1. The origin of this software must not be misrepresented; you must not
+>      claim that you wrote the original software. If you use this software
+>      in a product, an acknowledgment in the product documentation is required.   
+>   2. Altered source versions must be plainly marked as such, and must not be
+>      misrepresented as being the original software.   
+>   3. This notice may not be removed or altered from any source distribution.   
+
+## Final words
+
+I still believe in Windmill and would love for a company with the resources to step in and take it forward.
+
+I am [available for hire](http://qnoid.com/static/Curriculum%20vitae.pdf). I am based in Athens, Greece and able to invoice from a UK company if needed.
+
+---
+
+<b id="f1">1.</b> I should point out that this was my first ever macOS app. It is highly probable that I have made some amateur mistakes while learning about the responder chain, how to manage multiple windows and handle the menu bar. Consider this a fair warning.[↩](#a1)
